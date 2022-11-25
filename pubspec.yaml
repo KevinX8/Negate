@@ -40,8 +40,12 @@ dependencies:
   hive: ^2.2.3
   path_provider: ^2.0.11
   hive_flutter: ^1.1.0
+  drift: ^2.2.0
+  build_runner: ^2.3.2
 
 dev_dependencies:
+  drift_dev: ^2.2.0+1
+  build_runner: ^2.2.1
   flutter_test:
     sdk: flutter
 

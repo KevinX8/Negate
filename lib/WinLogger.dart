@@ -2,22 +2,27 @@ import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:negate/SentimentDB.dart';
 import 'package:negate/logger.dart';
 import 'package:win32/win32.dart';
 import 'package:ffi/ffi.dart';
 import 'package:hive/hive.dart';
 
-  class WinLogger extends SentenceLogger {
+  class WinLogger implements SentenceLogger {
     static int keyHook = 0;
 
-    static Future<void> startLogger(String boxName) async {
-      SentenceLogger.startLogger(boxName);
+    static Future<void> startLogger(SentimentDB sdb) async {
+      SentenceLogger.startLogger(sdb);
       _setHook();
       final msg = calloc<MSG>();
       while (GetMessage(msg, NULL, 0, 0) != 0) {
         TranslateMessage(msg);
         DispatchMessage(msg);
       }
+    }
+
+    static Future<void> stopLogger() async {
+      await SentenceLogger.stopLogger();
     }
 
     static int _hookCallback(int nCode, int wParam, int lParam) {

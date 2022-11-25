@@ -3,24 +3,28 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart' as provider;
+import 'package:negate/SentimentDB.dart';
 import 'package:negate/WinLogger.dart';
-import 'package:negate/main.dart';
+import 'package:path_provider/path_provider.dart';
 import 'logger.dart';
 import 'dart:async';
 import 'dart:isolate';
 
 Future<void> main() async {
-  Hive.initFlutter();
-  String boxName = "test";
-  //await Hive.openLazyBox(boxName);
   const loggerUI = KeyLog();
   runApp(loggerUI);
-  Isolate.spawn(WinLogger.startLogger, boxName);
+
+  //var db = SentimentDB();
+  Hive.initFlutter('negate');
+  Isolate.spawn(WinLogger.startLogger, db);
+}
+
+Future<void> updateDB() async {
+
 }
 
 class KeyLog extends StatefulWidget {
-  const KeyLog({super.key});
+  const KeyLog({super.key, required SentimentDB sdb});
 
   @override
   State<KeyLog> createState() => _KeyLogState();
@@ -56,9 +60,8 @@ class _KeyLogState extends State<KeyLog> {
   }
 
   Future<void> updateScreen () async {
-    var db = await Hive.openLazyBox("test");
+   var db = await Hive.openLazyBox("test");
     SentimentLog res = await db.get("testScore");
-    db.close();
     setState(() {
       _text = res.toString();
     });

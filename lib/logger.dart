@@ -1,45 +1,25 @@
 import 'dart:io';
 import 'dart:developer';
 
-import 'package:hive/hive.dart';
-
-@HiveType(typeId: 1)
-class SentimentLog {
-  SentimentLog({required this.sentence, required this.score});
-
-  @HiveField(0)
-  String sentence;
-
-  @HiveField(1)
-  double score;
-
-
-  @override
-  String toString() {
-    return '$sentence: $score';
-  }
-}
+import 'package:hive_flutter/adapters.dart';
+import 'package:negate/SentimentDB.dart';
+import 'package:negate/logger.dart';
 
 abstract class SentenceLogger {
   static StringBuffer sentence = StringBuffer();
-  static String dbName = "";
+  static late SentimentDB db;
 
   SentenceLogger();
 
   static logScore() async {
     log(sentence.toString());
     double score = 0.5;
-    var slog = SentimentLog(
-        sentence: sentence.toString(),
-        score: score);
-    var db = await Hive.openLazyBox(dbName);
-    await db.put("testScore", slog);
-    await db.close();
+    await db.into(db.sentimentLogs).insert(SentimentLog(id: 0, sentence: sentence.toString(), score: score));
     sentence.clear();
   }
 
-  static Future<void> startLogger(String boxName) async {
-    dbName = boxName;
+  static Future<void> startLogger(SentimentDB sdb) async {
+    db = sdb;
+    log(db.toString());
   }
-
 }
