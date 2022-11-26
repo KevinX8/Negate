@@ -27,6 +27,10 @@ class SentimentDB extends _$SentimentDB {
   // Migrations are covered later in the documentation.
   @override
   int get schemaVersion => 1;
+
+  Future<SentimentLog> getLastSentiment() async {
+    return await (select(sentimentLogs)..limit(1)).getSingle();
+  }
 }
 
 LazyDatabase _openConnection() {
