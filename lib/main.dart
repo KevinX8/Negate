@@ -26,20 +26,6 @@ class DBMonitor extends StateNotifier<String> {
   void set(str) => state = str;
 }
 
-void _startBackground(IsolateStartRequest request) {
-  // this is the entry point from the background isolate! Let's create
-  // the database from the path we received
-  final executor = NativeDatabase(File(request.targetPath));
-  // we're using DriftIsolate.inCurrent here as this method already runs on a
-  // background isolate. If we used DriftIsolate.spawn, a third isolate would be
-  // started which is not what we want!
-  final driftIsolate = DriftIsolate.inCurrent(
-        () => DatabaseConnection(executor),
-  );
-  // inform the starting isolate about this, so that it can call .connect()
-  request.sendDriftIsolate.send(driftIsolate);
-}
-
 Future<void> main() async {
   const loggerUI = KeyLog();
   runApp(const ProviderScope(
@@ -50,13 +36,10 @@ Future<void> main() async {
   final dbString = p.join(dbFolder.path, 'db.sqlite');
   final rPort = ReceivePort();
 
-  await Isolate.spawn(
-    _startBackground,
-    IsolateStartRequest(rPort.sendPort, dbString),
-  );
-  var isolate = await rPort.first as DriftIsolate;
-  await Isolate.spawn(WinLogger.startLogger, isolate.connectPort);
+  await Isolate.spawn(WinLogger.startLogger, IsolateStartRequest(rPort.sendPort, dbString));
 
+  var iPort = await rPort.first as SendPort;
+  var isolate = DriftIsolate.fromConnectPort(iPort);
   var sdb = SentimentDB.connect(await isolate.connect());
   getIt.registerSingleton<SentimentDB>(sdb);
 }

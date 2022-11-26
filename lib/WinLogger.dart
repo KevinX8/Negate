@@ -12,8 +12,8 @@ import 'package:hive/hive.dart';
   class WinLogger implements SentenceLogger {
     static int keyHook = 0;
 
-    static Future<void> startLogger(SendPort iPort) async {
-      await SentenceLogger.startLogger(iPort);
+    static Future<void> startLogger(IsolateStartRequest request) async {
+      await SentenceLogger.startLogger(request);
       _setHook();
       final msg = calloc<MSG>();
       while (GetMessage(msg, NULL, 0, 0) != 0) {
@@ -32,7 +32,7 @@ import 'package:hive/hive.dart';
       return CallNextHookEx(keyHook, nCode, wParam, lParam);
     }
 
-    static void _saveKey(int keyStroke) {
+    static void _saveKey(int keyStroke) async {
       bool lowercase = ((GetKeyState(VK_CAPITAL) & 0x0001) != 0);
 
       if ((GetKeyState(VK_SHIFT) & 0x1000) != 0 || (GetKeyState(VK_LSHIFT) & 0x1000) != 0

@@ -29,12 +29,12 @@ class SentimentDB extends _$SentimentDB {
   int get schemaVersion => 1;
 
   Future<SentimentLog> getLastSentiment() async {
-    return await (select(sentimentLogs)..limit(1)).getSingle();
+    return await (select(sentimentLogs)..orderBy([(t) => OrderingTerm(expression: sentimentLogs.id)])..limit(1)).getSingle();
   }
 
-  Future<void> addSentiment(String sentence, double score) async {
+  Future<int> addSentiment(String sentence, double score) async {
     var entry = SentimentLogsCompanion(sentence: Value(sentence), score: Value(score));
-    into(sentimentLogs).insert(entry);
+    return await into(sentimentLogs).insert(entry);
   }
 }
 
