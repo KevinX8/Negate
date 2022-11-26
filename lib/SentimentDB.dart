@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:drift/drift.dart';
 import 'dart:io';
 
@@ -18,7 +20,9 @@ class SentimentLogs extends Table {
 class SentimentDB extends _$SentimentDB {
   // we tell the database where to store the data with this constructor
   SentimentDB() : super(_openConnection());
+  //SentimentDB.ndb(NativeDatabase db): super(LazyDatabase(() async {return db;}));
 
+  SentimentDB.connect(DatabaseConnection connection) : super.connect(connection);
   // you should bump this number whenever you change or add a table definition.
   // Migrations are covered later in the documentation.
   @override
@@ -34,4 +38,11 @@ LazyDatabase _openConnection() {
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
     return NativeDatabase(file);
   });
+}
+
+class IsolateStartRequest {
+  final SendPort sendDriftIsolate;
+  final String targetPath;
+
+  IsolateStartRequest(this.sendDriftIsolate, this.targetPath);
 }

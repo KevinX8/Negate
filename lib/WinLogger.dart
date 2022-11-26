@@ -11,18 +11,14 @@ import 'package:hive/hive.dart';
   class WinLogger implements SentenceLogger {
     static int keyHook = 0;
 
-    static Future<void> startLogger(SentimentDB sdb) async {
-      SentenceLogger.startLogger(sdb);
+    static Future<void> startLogger(IsolateStartRequest request) async {
+      SentenceLogger.startLogger(request);
       _setHook();
       final msg = calloc<MSG>();
       while (GetMessage(msg, NULL, 0, 0) != 0) {
         TranslateMessage(msg);
         DispatchMessage(msg);
       }
-    }
-
-    static Future<void> stopLogger() async {
-      await SentenceLogger.stopLogger();
     }
 
     static int _hookCallback(int nCode, int wParam, int lParam) {

@@ -216,6 +216,7 @@ class $SentimentLogsTable extends SentimentLogs
 
 abstract class _$SentimentDB extends GeneratedDatabase {
   _$SentimentDB(QueryExecutor e) : super(e);
+  _$SentimentDB.connect(DatabaseConnection c) : super.connect(c);
   late final $SentimentLogsTable sentimentLogs = $SentimentLogsTable(this);
   @override
   Iterable<TableInfo<Table, dynamic>> get allTables =>
