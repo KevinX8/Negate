@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:negate/SentimentDB.dart';
 import 'package:negate/logger.dart';
@@ -11,8 +12,8 @@ import 'package:hive/hive.dart';
   class WinLogger implements SentenceLogger {
     static int keyHook = 0;
 
-    static Future<void> startLogger(IsolateStartRequest request) async {
-      SentenceLogger.startLogger(request);
+    static Future<void> startLogger(SendPort iPort) async {
+      await SentenceLogger.startLogger(iPort);
       _setHook();
       final msg = calloc<MSG>();
       while (GetMessage(msg, NULL, 0, 0) != 0) {

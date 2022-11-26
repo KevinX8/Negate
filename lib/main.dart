@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/isolate.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:negate/SentimentDB.dart';
 import 'package:negate/WinLogger.dart';
@@ -25,6 +26,20 @@ class DBMonitor extends StateNotifier<String> {
   void set(str) => state = str;
 }
 
+void _startBackground(IsolateStartRequest request) {
+  // this is the entry point from the background isolate! Let's create
+  // the database from the path we received
+  final executor = NativeDatabase(File(request.targetPath));
+  // we're using DriftIsolate.inCurrent here as this method already runs on a
+  // background isolate. If we used DriftIsolate.spawn, a third isolate would be
+  // started which is not what we want!
+  final driftIsolate = DriftIsolate.inCurrent(
+        () => DatabaseConnection(executor),
+  );
+  // inform the starting isolate about this, so that it can call .connect()
+  request.sendDriftIsolate.send(driftIsolate);
+}
+
 Future<void> main() async {
   const loggerUI = KeyLog();
   runApp(const ProviderScope(
@@ -34,13 +49,16 @@ Future<void> main() async {
   final dbFolder = await getApplicationSupportDirectory();
   final dbString = p.join(dbFolder.path, 'db.sqlite');
   final rPort = ReceivePort();
-  final errPort = ReceivePort();
-  Isolate.spawn(WinLogger.startLogger, IsolateStartRequest(rPort.sendPort, dbString), onError: errPort.sendPort, errorsAreFatal: true);
+
+  await Isolate.spawn(
+    _startBackground,
+    IsolateStartRequest(rPort.sendPort, dbString),
+  );
   var isolate = await rPort.first as DriftIsolate;
-  DatabaseConnection conn = await isolate.connect();
-  var sdb = SentimentDB.connect(conn);
+  await Isolate.spawn(WinLogger.startLogger, isolate.connectPort);
+
+  var sdb = SentimentDB.connect(await isolate.connect());
   getIt.registerSingleton<SentimentDB>(sdb);
-  sdb.getLastSentiment();
 }
 
 class KeyLog extends StatelessWidget {

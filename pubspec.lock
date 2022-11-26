@@ -514,12 +514,19 @@ packages:
     source: hosted
     version: "1.9.0"
   sqlite3:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: sqlite3
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.9.1"
+  sqlite3_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: sqlite3_flutter_libs
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.12"
   sqlparser:
     dependency: transitive
     description:

@@ -31,6 +31,11 @@ class SentimentDB extends _$SentimentDB {
   Future<SentimentLog> getLastSentiment() async {
     return await (select(sentimentLogs)..limit(1)).getSingle();
   }
+
+  Future<void> addSentiment(String sentence, double score) async {
+    var entry = SentimentLogsCompanion(sentence: Value(sentence), score: Value(score));
+    into(sentimentLogs).insert(entry);
+  }
 }
 
 LazyDatabase _openConnection() {

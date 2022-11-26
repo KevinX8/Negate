@@ -44,6 +44,8 @@ dependencies:
   build_runner: ^2.3.2
   flutter_riverpod: ^2.1.1
   get_it: ^7.2.0
+  sqlite3: ^1.9.1
+  sqlite3_flutter_libs: ^0.5.12
 
 dev_dependencies:
   drift_dev: ^2.2.0+1

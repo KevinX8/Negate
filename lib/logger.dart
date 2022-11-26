@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
+import 'dart:isolate';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -16,20 +17,15 @@ abstract class SentenceLogger {
     log(sentence.toString());
     double score = 0.5;
     if (sentence.toString().length >= 6) {
-      db.into(db.sentimentLogs).insert(SentimentLog(id: 0, sentence: sentence.toString(), score: score));
+      db.addSentiment(sentence.toString(), score);
     }
-
     sentence.clear();
   }
 
-  static Future<void> startLogger(IsolateStartRequest request) async {
-    var executor = NativeDatabase(File(request.targetPath));
-    final driftIsolate = DriftIsolate.inCurrent(
-        () => DatabaseConnection(executor),
-    );
-
-    db = SentimentDB.connect(DatabaseConnection(executor));
-
-    request.sendDriftIsolate.send(driftIsolate);
+  static Future<void> startLogger(SendPort iPort) async {
+    var isolate = DriftIsolate.fromConnectPort(iPort);
+    DatabaseConnection conn = await isolate.connect();
+    db = SentimentDB.connect(conn);
+    await db.addSentiment("yoooorooo", 0.612);
   }
 }
