@@ -9,15 +9,14 @@ import 'package:negate/SentimentDB.dart';
 
 abstract class SentenceLogger {
   static StringBuffer sentence = StringBuffer();
-  static late SentimentDB db;
+  static late DriftIsolate iso;
 
   SentenceLogger();
 
   static Future<void> logScore() async {
     log(sentence.toString());
-    double score = 0.5;
     if (sentence.toString().length >= 6) {
-      await db.addSentiment(sentence.toString(), score);
+      Isolate.spawn(SentimentDB.addSentiment, AddSentimentRequest(sentence.toString(), iso.connectPort));
     }
     sentence.clear();
   }
@@ -43,10 +42,9 @@ abstract class SentenceLogger {
       IsolateStartRequest(rPort.sendPort, request.targetPath),
     );
 
-    var isolate = await rPort.first as DriftIsolate;
-    request.sendDriftIsolate.send(isolate.connectPort);
-
-    DatabaseConnection conn = await isolate.connect( isolateDebugLog: true);
-    db = SentimentDB.connect(conn);
+    iso = await rPort.first as DriftIsolate;
+    request.sendDriftIsolate.send(iso.connectPort);
+    //DatabaseConnection conn = await isolate.connect( isolateDebugLog: true);
+    //db = SentimentDB.connect(conn);
   }
 }

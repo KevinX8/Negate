@@ -1,6 +1,7 @@
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
+import 'package:drift/isolate.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -32,9 +33,14 @@ class SentimentDB extends _$SentimentDB {
     return await (select(sentimentLogs)..orderBy([(t) => OrderingTerm(expression: sentimentLogs.id)])..limit(1)).getSingle();
   }
 
-  Future<int> addSentiment(String sentence, double score) async {
-    var entry = SentimentLogsCompanion(sentence: Value(sentence), score: Value(score));
-    return await into(sentimentLogs).insert(entry);
+  static Future<void> addSentiment(AddSentimentRequest r) async {
+    double score = 0.5;
+
+    var entry = SentimentLogsCompanion(sentence: Value(r.sentence), score: Value(score));
+    var isolate = DriftIsolate.fromConnectPort(r.iPort);
+    var sdb = SentimentDB.connect(await isolate.connect());
+
+    await sdb.into(sdb.sentimentLogs).insert(entry);
   }
 }
 
@@ -54,4 +60,11 @@ class IsolateStartRequest {
   final String targetPath;
 
   IsolateStartRequest(this.sendDriftIsolate, this.targetPath);
+}
+
+class AddSentimentRequest {
+  final String sentence;
+  final SendPort iPort;
+
+  AddSentimentRequest(this.sentence, this.iPort);
 }

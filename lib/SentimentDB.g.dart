@@ -2,10 +2,6 @@
 
 part of 'SentimentDB.dart';
 
-// **************************************************************************
-// DriftDatabaseGenerator
-// **************************************************************************
-
 // ignore_for_file: type=lint
 class SentimentLog extends DataClass implements Insertable<SentimentLog> {
   final int id;
@@ -144,14 +140,17 @@ class $SentimentLogsTable extends SentimentLogs
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $SentimentLogsTable(this.attachedDatabase, [this._alias]);
-  final VerificationMeta _idMeta = const VerificationMeta('id');
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
       'id', aliasedName, false,
+      hasAutoIncrement: true,
       type: DriftSqlType.int,
       requiredDuringInsert: false,
-      defaultConstraints: 'PRIMARY KEY AUTOINCREMENT');
-  final VerificationMeta _sentenceMeta = const VerificationMeta('sentence');
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _sentenceMeta =
+      const VerificationMeta('sentence');
   @override
   late final GeneratedColumn<String> sentence = GeneratedColumn<String>(
       'sentence', aliasedName, false,
@@ -159,7 +158,7 @@ class $SentimentLogsTable extends SentimentLogs
           GeneratedColumn.checkTextLength(minTextLength: 6, maxTextLength: 50),
       type: DriftSqlType.string,
       requiredDuringInsert: true);
-  final VerificationMeta _scoreMeta = const VerificationMeta('score');
+  static const VerificationMeta _scoreMeta = const VerificationMeta('score');
   @override
   late final GeneratedColumn<double> score = GeneratedColumn<double>(
       'score', aliasedName, false,
@@ -199,11 +198,11 @@ class $SentimentLogsTable extends SentimentLogs
   SentimentLog map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SentimentLog(
-      id: attachedDatabase.options.types
+      id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      sentence: attachedDatabase.options.types
+      sentence: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sentence'])!,
-      score: attachedDatabase.options.types
+      score: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}score'])!,
     );
   }
@@ -219,7 +218,7 @@ abstract class _$SentimentDB extends GeneratedDatabase {
   _$SentimentDB.connect(DatabaseConnection c) : super.connect(c);
   late final $SentimentLogsTable sentimentLogs = $SentimentLogsTable(this);
   @override
-  Iterable<TableInfo<Table, dynamic>> get allTables =>
+  Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [sentimentLogs];

@@ -1,9 +1,6 @@
 import 'dart:developer';
-import 'dart:io';
 
-import 'package:drift/drift.dart';
 import 'package:drift/isolate.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:negate/SentimentDB.dart';
 import 'package:negate/WinLogger.dart';
