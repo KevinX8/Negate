@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:developer';
+
 import 'package:flutter/services.dart';
-import 'package:negate/SentimentAnalysis.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class SentimentAnalysis {
@@ -36,7 +36,7 @@ class SentimentAnalysis {
   Future<void> _loadModel() async {
     // Creating the interpreter using Interpreter.fromAsset
     sInterpreter = await Interpreter.fromAsset(_modelFile);
-    print('Interpreter loaded successfully');
+    log('Interpreter loaded successfully');
   }
 
   Future<void> _loadDictionary() async {
@@ -48,7 +48,7 @@ class SentimentAnalysis {
       dict[entry[0]] = int.parse(entry[1]);
     }
     dictionary = dict;
-    print('Dictionary loaded successfully');
+    log('Dictionary loaded successfully');
   }
 
   double classify(String rawText) {

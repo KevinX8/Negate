@@ -5,8 +5,7 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
-import 'package:negate/SentimentAnalysis.dart';
-import 'package:negate/SentimentDB.dart';
+import 'package:negate/sentiment_db.dart';
 
 abstract class SentenceLogger {
   static StringBuffer sentence = StringBuffer();
@@ -48,5 +47,9 @@ abstract class SentenceLogger {
     iso = await rPort.first as DriftIsolate;
     tfp = request.tfp;
     request.sendDriftIsolate.send(iso.connectPort);
+  }
+
+  static Future<void> Function(TfliteRequest) getLoggerFactory() {
+    throw UnsupportedError("Platform not supported");
   }
 }

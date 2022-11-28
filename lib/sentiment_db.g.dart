@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'SentimentDB.dart';
+part of 'sentiment_db.dart';
 
 // ignore_for_file: type=lint
 class SentimentLog extends DataClass implements Insertable<SentimentLog> {

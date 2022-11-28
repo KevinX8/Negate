@@ -1,8 +1,7 @@
-import 'dart:developer';
 import 'dart:ffi';
 
-import 'package:negate/SentimentDB.dart';
-import 'package:negate/logger.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/logger/logger.dart';
 import 'package:win32/win32.dart';
 import 'package:ffi/ffi.dart';
 
@@ -53,5 +52,9 @@ import 'package:ffi/ffi.dart';
 
     static void _setHook() {
       keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
+    }
+
+    static Future<void> Function(TfliteRequest) getLoggerFactory() {
+      return WinLogger.startLogger;
     }
   }

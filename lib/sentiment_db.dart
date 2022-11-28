@@ -6,11 +6,11 @@ import 'package:drift/isolate.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
-import 'package:negate/SentimentAnalysis.dart';
+import 'package:negate/sentiment_analysis.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-part 'SentimentDB.g.dart';
+part 'sentiment_db.g.dart';
 
 class SentimentLogs extends Table {
 

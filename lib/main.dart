@@ -1,16 +1,20 @@
 import 'dart:developer';
+import 'dart:async';
+import 'dart:isolate';
+import 'dart:io' show Platform;
+
+import 'package:negate/sentiment_analysis.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/logger/logger.dart';
+import 'package:negate/logger/win_logger.dart';
+import 'package:negate/logger/android_logger.dart';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart';
-import 'package:negate/SentimentAnalysis.dart';
-import 'package:negate/SentimentDB.dart';
-import 'package:negate/WinLogger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path/path.dart' as p;
-import 'dart:async';
-import 'dart:isolate';
 
 final dbProvider = StateNotifierProvider((ref) {
   return DBMonitor();
@@ -37,8 +41,17 @@ Future<void> main() async {
   var analyser = SentimentAnalysis();
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
+  Future<void> Function(TfliteRequest) loggerFunc;
 
-  await Isolate.spawn(WinLogger.startLogger, TfliteRequest(rPort.sendPort, dbString, tfp));
+  if (Platform.isWindows) {
+    loggerFunc = WinLogger.getLoggerFactory();
+  } else if (Platform.isAndroid) {
+    loggerFunc = AndroidLogger.getLoggerFactory();
+  } else {
+    loggerFunc = SentenceLogger.getLoggerFactory();
+  }
+
+  await Isolate.spawn(loggerFunc, TfliteRequest(rPort.sendPort, dbString, tfp));
 
   var iPort = await rPort.first as SendPort;
   var isolate = DriftIsolate.fromConnectPort(iPort);
