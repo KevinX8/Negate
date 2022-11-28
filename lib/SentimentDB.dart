@@ -1,10 +1,12 @@
 import 'dart:isolate';
+import 'dart:developer';
 
 import 'package:drift/drift.dart';
 import 'package:drift/isolate.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:negate/SentimentAnalysis.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -30,11 +32,13 @@ class SentimentDB extends _$SentimentDB {
   int get schemaVersion => 1;
 
   Future<SentimentLog> getLastSentiment() async {
-    return await (select(sentimentLogs)..orderBy([(t) => OrderingTerm(expression: sentimentLogs.id)])..limit(1)).getSingle();
+    return await (select(sentimentLogs)..orderBy([(t) => OrderingTerm(expression: sentimentLogs.id, mode: OrderingMode.desc)])..limit(1)).getSingle();
   }
 
   static Future<void> addSentiment(AddSentimentRequest r) async {
-    double score = 0.5;
+    var analyser = SentimentAnalysis.isolate(r.tfp.iAddress, r.tfp.dict);
+    double score = analyser.classify(r.sentence);
+    log(score.toString());
 
     var entry = SentimentLogsCompanion(sentence: Value(r.sentence), score: Value(score));
     var isolate = DriftIsolate.fromConnectPort(r.iPort);
@@ -59,12 +63,26 @@ class IsolateStartRequest {
   final SendPort sendDriftIsolate;
   final String targetPath;
 
-  IsolateStartRequest(this.sendDriftIsolate, this.targetPath);
+  IsolateStartRequest({required this.sendDriftIsolate, required this.targetPath});
+}
+
+class TfParams {
+  final int iAddress;
+  final Map<String, int> dict;
+
+  TfParams(this.iAddress, this.dict);
+}
+
+class TfliteRequest extends IsolateStartRequest {
+  final TfParams tfp;
+
+  TfliteRequest(SendPort sendDriftIsolate,String targetPath, this.tfp) : super(sendDriftIsolate: sendDriftIsolate, targetPath: targetPath);
 }
 
 class AddSentimentRequest {
   final String sentence;
   final SendPort iPort;
+  final TfParams tfp;
 
-  AddSentimentRequest(this.sentence, this.iPort);
+  AddSentimentRequest(this.sentence, this.iPort, this.tfp);
 }

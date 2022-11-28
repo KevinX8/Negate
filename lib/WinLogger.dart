@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ffi';
 
 import 'package:negate/SentimentDB.dart';
@@ -8,7 +9,7 @@ import 'package:ffi/ffi.dart';
   class WinLogger implements SentenceLogger {
     static int keyHook = 0;
 
-    static Future<void> startLogger(IsolateStartRequest request) async {
+    static Future<void> startLogger(TfliteRequest request) async {
       await SentenceLogger.startLogger(request);
       _setHook();
       final msg = calloc<MSG>();
@@ -37,9 +38,12 @@ import 'package:ffi/ffi.dart';
         lowercase = !lowercase;
       }
 
-      //key = MapVirtualKey(keyStroke, 2);
       if (keyStroke == 13) {
         await SentenceLogger.logScore();
+      } else if (keyStroke == 8) {
+        var temp = SentenceLogger.sentence.toString().substring(0, SentenceLogger.sentence.toString().length - 1);
+        SentenceLogger.sentence.clear();
+        SentenceLogger.sentence.write(temp);
       } else if (keyStroke != 161 && keyStroke != 160) {
         var key = String.fromCharCode(keyStroke);
         key = !lowercase ? key.toLowerCase() : key;

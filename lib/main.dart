@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart';
+import 'package:negate/SentimentAnalysis.dart';
 import 'package:negate/SentimentDB.dart';
 import 'package:negate/WinLogger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -33,7 +34,11 @@ Future<void> main() async {
   final dbString = p.join(dbFolder.path, 'db.sqlite');
   final rPort = ReceivePort();
 
-  await Isolate.spawn(WinLogger.startLogger, IsolateStartRequest(rPort.sendPort, dbString));
+  var analyser = SentimentAnalysis();
+  await analyser.init();
+  var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
+
+  await Isolate.spawn(WinLogger.startLogger, TfliteRequest(rPort.sendPort, dbString, tfp));
 
   var iPort = await rPort.first as SendPort;
   var isolate = DriftIsolate.fromConnectPort(iPort);

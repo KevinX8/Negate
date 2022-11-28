@@ -5,18 +5,21 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
+import 'package:negate/SentimentAnalysis.dart';
 import 'package:negate/SentimentDB.dart';
 
 abstract class SentenceLogger {
   static StringBuffer sentence = StringBuffer();
   static late DriftIsolate iso;
+  static late TfParams tfp;
 
   SentenceLogger();
 
   static Future<void> logScore() async {
-    log(sentence.toString());
-    if (sentence.toString().length >= 6) {
-      Isolate.spawn(SentimentDB.addSentiment, AddSentimentRequest(sentence.toString(), iso.connectPort));
+    final String slog = sentence.toString();
+    log(slog);
+    if (slog.length >= 6) {
+      Isolate.spawn(SentimentDB.addSentiment, AddSentimentRequest(slog, iso.connectPort, tfp));
     }
     sentence.clear();
   }
@@ -35,16 +38,15 @@ abstract class SentenceLogger {
     request.sendDriftIsolate.send(driftIsolate);
   }
 
-  static Future<void> startLogger(IsolateStartRequest request) async {
+  static Future<void> startLogger(TfliteRequest request) async {
     var rPort = ReceivePort();
     await Isolate.spawn(
       _startBackground,
-      IsolateStartRequest(rPort.sendPort, request.targetPath),
+      IsolateStartRequest(sendDriftIsolate: rPort.sendPort, targetPath: request.targetPath),
     );
 
     iso = await rPort.first as DriftIsolate;
+    tfp = request.tfp;
     request.sendDriftIsolate.send(iso.connectPort);
-    //DatabaseConnection conn = await isolate.connect( isolateDebugLog: true);
-    //db = SentimentDB.connect(conn);
   }
 }
