@@ -1,13 +1,10 @@
 import 'dart:developer';
 import 'dart:async';
 import 'dart:isolate';
-import 'dart:io' show Platform;
 
+import 'package:negate/logger/logger_factory.dart';
 import 'package:negate/sentiment_analysis.dart';
 import 'package:negate/sentiment_db.dart';
-import 'package:negate/logger/logger.dart';
-import 'package:negate/logger/win_logger.dart';
-import 'package:negate/logger/android_logger.dart';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart';
@@ -41,15 +38,7 @@ Future<void> main() async {
   var analyser = SentimentAnalysis();
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
-  Future<void> Function(TfliteRequest) loggerFunc;
-
-  if (Platform.isWindows) {
-    loggerFunc = WinLogger.getLoggerFactory();
-  } else if (Platform.isAndroid) {
-    loggerFunc = AndroidLogger.getLoggerFactory();
-  } else {
-    loggerFunc = SentenceLogger.getLoggerFactory();
-  }
+  Future<void> Function(TfliteRequest) loggerFunc = LoggerFactory.getLoggerFactory();
 
   await Isolate.spawn(loggerFunc, TfliteRequest(rPort.sendPort, dbString, tfp));
 

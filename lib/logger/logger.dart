@@ -7,20 +7,25 @@ import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
 import 'package:negate/sentiment_db.dart';
 
-abstract class SentenceLogger {
-  static StringBuffer sentence = StringBuffer();
-  static late DriftIsolate iso;
-  static late TfParams tfp;
+class SentenceLogger {
+  static final SentenceLogger _instance = SentenceLogger.init();
+  static final StringBuffer _sentence = StringBuffer();
+  static late DriftIsolate _iso;
+  static late TfParams _tfp;
 
-  SentenceLogger();
+  factory SentenceLogger() {
+    return _instance;
+  }
 
-  static Future<void> logScore() async {
-    final String slog = sentence.toString();
+  SentenceLogger.init();
+
+  Future<void> logScore() async {
+    final String slog = _sentence.toString();
     log(slog);
     if (slog.length >= 6) {
-      Isolate.spawn(SentimentDB.addSentiment, AddSentimentRequest(slog, iso.connectPort, tfp));
+      Isolate.spawn(SentimentDB.addSentiment, AddSentimentRequest(slog, _iso.connectPort, _tfp));
     }
-    sentence.clear();
+    _sentence.clear();
   }
 
   static void _startBackground(IsolateStartRequest request) {
@@ -37,19 +42,31 @@ abstract class SentenceLogger {
     request.sendDriftIsolate.send(driftIsolate);
   }
 
-  static Future<void> startLogger(TfliteRequest request) async {
+  Future<void> startLogger(TfliteRequest request) async {
     var rPort = ReceivePort();
     await Isolate.spawn(
       _startBackground,
       IsolateStartRequest(sendDriftIsolate: rPort.sendPort, targetPath: request.targetPath),
     );
 
-    iso = await rPort.first as DriftIsolate;
-    tfp = request.tfp;
-    request.sendDriftIsolate.send(iso.connectPort);
+    _iso = await rPort.first as DriftIsolate;
+    _tfp = request.tfp;
+    request.sendDriftIsolate.send(_iso.connectPort);
   }
 
-  static Future<void> Function(TfliteRequest) getLoggerFactory() {
+  Future<void> Function(TfliteRequest) getLogger() {
     throw UnsupportedError("Platform not supported");
+  }
+
+  String getSentence() {
+    return SentenceLogger._sentence.toString();
+  }
+
+  void writeToSentence(Object? obj) {
+    SentenceLogger._sentence.write(obj);
+  }
+
+  void clearSentence() {
+    SentenceLogger._sentence.clear();
   }
 }

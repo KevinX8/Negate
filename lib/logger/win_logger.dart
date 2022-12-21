@@ -5,11 +5,19 @@ import 'package:negate/logger/logger.dart';
 import 'package:win32/win32.dart';
 import 'package:ffi/ffi.dart';
 
-  class WinLogger implements SentenceLogger {
-    static int keyHook = 0;
+  class WinLogger extends SentenceLogger {
+    static final WinLogger _instance = WinLogger.init();
+    static int _keyHook = 0;
 
-    static Future<void> startLogger(TfliteRequest request) async {
-      await SentenceLogger.startLogger(request);
+    factory WinLogger() {
+      return _instance;
+    }
+
+    WinLogger.init() : super.init();
+
+    @override
+    Future<void> startLogger(TfliteRequest request) async {
+      await super.startLogger(request);
       _setHook();
       final msg = calloc<MSG>();
       while (GetMessage(msg, NULL, 0, 0) != 0) {
@@ -22,13 +30,13 @@ import 'package:ffi/ffi.dart';
       if (nCode == HC_ACTION) {
         if (wParam == WM_KEYDOWN) {
           final kbs = Pointer<KBDLLHOOKSTRUCT>.fromAddress(lParam);
-            _saveKey(kbs.ref.vkCode);
+            WinLogger()._saveKey(kbs.ref.vkCode);
         }
       }
-      return CallNextHookEx(keyHook, nCode, wParam, lParam);
+      return CallNextHookEx(_keyHook, nCode, wParam, lParam);
     }
 
-    static Future<void> _saveKey(int keyStroke) async {
+    Future<void> _saveKey(int keyStroke) async {
       bool lowercase = ((GetKeyState(VK_CAPITAL) & 0x0001) != 0);
 
       if ((GetKeyState(VK_SHIFT) & 0x1000) != 0 || (GetKeyState(VK_LSHIFT) & 0x1000) != 0
@@ -38,23 +46,24 @@ import 'package:ffi/ffi.dart';
       }
 
       if (keyStroke == 13) {
-        await SentenceLogger.logScore();
+        await logScore();
       } else if (keyStroke == 8) {
-        var temp = SentenceLogger.sentence.toString().substring(0, SentenceLogger.sentence.toString().length - 1);
-        SentenceLogger.sentence.clear();
-        SentenceLogger.sentence.write(temp);
+        var temp = getSentence().substring(0, getSentence().length - 1);
+        clearSentence();
+        writeToSentence(temp);
       } else if (keyStroke != 161 && keyStroke != 160) {
         var key = String.fromCharCode(keyStroke);
         key = !lowercase ? key.toLowerCase() : key;
-        SentenceLogger.sentence.write(key);
+        writeToSentence(key);
       }
     }
 
-    static void _setHook() {
-      keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
+    void _setHook() {
+      _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
     }
 
-    static Future<void> Function(TfliteRequest) getLoggerFactory() {
-      return WinLogger.startLogger;
+    @override
+    Future<void> Function(TfliteRequest) getLogger() {
+      return startLogger;
     }
   }

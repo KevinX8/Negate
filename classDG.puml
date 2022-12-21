@@ -1,0 +1,198 @@
+@startuml
+set namespaceSeparator ::
+
+class "negate::logger::android_logger.dart::AndroidLogger" {
+  {static} -AndroidLogger _instance
+  +Future<void> startLogger()
+  +Future<void> Function(TfliteRequest) getLogger()
+}
+
+"negate::logger::android_logger.dart::AndroidLogger" o-- "negate::logger::android_logger.dart::AndroidLogger"
+"negate::logger::logger.dart::SentenceLogger" <|-- "negate::logger::android_logger.dart::AndroidLogger"
+
+class "negate::logger::logger.dart::SentenceLogger" {
+  {static} -SentenceLogger _instance
+  {static} -StringBuffer _sentence
+  {static} -DriftIsolate _iso
+  {static} -TfParams _tfp
+  +Future<void> logScore()
+  {static} -void _startBackground()
+  +Future<void> startLogger()
+  +Future<void> Function(TfliteRequest) getLogger()
+  +String getSentence()
+  +void writeToSentence()
+  +void clearSentence()
+}
+
+"negate::logger::logger.dart::SentenceLogger" o-- "negate::logger::logger.dart::SentenceLogger"
+"negate::logger::logger.dart::SentenceLogger" o-- "drift::isolate.dart::DriftIsolate"
+"negate::logger::logger.dart::SentenceLogger" o-- "negate::sentiment_db.dart::TfParams"
+
+class "negate::logger::logger_factory.dart::LoggerFactory" {
+  {static} +Future<void> Function(TfliteRequest) getLoggerFactory()
+}
+
+class "negate::logger::win_logger.dart::WinLogger" {
+  {static} -WinLogger _instance
+  {static} -int _keyHook
+  +Future<void> startLogger()
+  {static} -int _hookCallback()
+  -Future<void> _saveKey()
+  -void _setHook()
+  +Future<void> Function(TfliteRequest) getLogger()
+}
+
+"negate::logger::win_logger.dart::WinLogger" o-- "negate::logger::win_logger.dart::WinLogger"
+"negate::logger::logger.dart::SentenceLogger" <|-- "negate::logger::win_logger.dart::WinLogger"
+
+class "negate::main.dart::DBMonitor" {
+  +void set()
+}
+
+"state_notifier::state_notifier.dart::StateNotifier" <|-- "negate::main.dart::DBMonitor"
+
+class "negate::main.dart::KeyLog" {
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "negate::main.dart::KeyLog"
+
+class "negate::main.dart::Home" {
+  +Widget build()
+}
+
+"flutter_riverpod::src::consumer.dart::ConsumerWidget" <|-- "negate::main.dart::Home"
+
+class "negate::sentiment_analysis.dart::SentimentAnalysis" {
+  -String _modelFile
+  -String _vocabFile
+  -int _sentenceLen
+  +String start
+  +String pad
+  +String unk
+  +Map<String, int> dictionary
+  +Interpreter sInterpreter
+  +Future<void> init()
+  -Future<void> _loadModel()
+  -Future<void> _loadDictionary()
+  +double classify()
+  +List<List<double>> tokenizeInputText()
+}
+
+"negate::sentiment_analysis.dart::SentimentAnalysis" o-- "tflite_flutter::src::interpreter.dart::Interpreter"
+
+class "negate::sentiment_db.dart::SentimentLogs" {
+  +Column<int> id
+  +Column<String> sentence
+  +Column<double> score
+}
+
+"negate::sentiment_db.dart::SentimentLogs" o-- "drift::src::dsl::dsl.dart::Column<int>"
+"negate::sentiment_db.dart::SentimentLogs" o-- "drift::src::dsl::dsl.dart::Column<String>"
+"negate::sentiment_db.dart::SentimentLogs" o-- "drift::src::dsl::dsl.dart::Column<double>"
+"drift::src::dsl::dsl.dart::Table" <|-- "negate::sentiment_db.dart::SentimentLogs"
+
+class "negate::sentiment_db.dart::SentimentDB" {
+  +int schemaVersion
+  +Future<SentimentLog> getLastSentiment()
+  {static} +Future<void> addSentiment()
+}
+
+"negate::sentiment_db.dart::_$SentimentDB" <|-- "negate::sentiment_db.dart::SentimentDB"
+
+class "negate::sentiment_db.dart::IsolateStartRequest" {
+  +SendPort sendDriftIsolate
+  +String targetPath
+}
+
+"negate::sentiment_db.dart::IsolateStartRequest" o-- "dart::isolate::SendPort"
+
+class "negate::sentiment_db.dart::TfParams" {
+  +int iAddress
+  +Map<String, int> dict
+}
+
+class "negate::sentiment_db.dart::TfliteRequest" {
+  +TfParams tfp
+}
+
+"negate::sentiment_db.dart::TfliteRequest" o-- "negate::sentiment_db.dart::TfParams"
+"negate::sentiment_db.dart::IsolateStartRequest" <|-- "negate::sentiment_db.dart::TfliteRequest"
+
+class "negate::sentiment_db.dart::AddSentimentRequest" {
+  +String sentence
+  +SendPort iPort
+  +TfParams tfp
+}
+
+"negate::sentiment_db.dart::AddSentimentRequest" o-- "dart::isolate::SendPort"
+"negate::sentiment_db.dart::AddSentimentRequest" o-- "negate::sentiment_db.dart::TfParams"
+
+class "negate::sentiment_db.dart::SentimentLog" {
+  +int id
+  +String sentence
+  +double score
+  +int hashCode
+  +Map<String, Expression<dynamic>> toColumns()
+  +SentimentLogsCompanion toCompanion()
+  +Map<String, dynamic> toJson()
+  +SentimentLog copyWith()
+  +String toString()
+  +bool ==()
+}
+
+"drift::src::runtime::data_class.dart::DataClass" <|-- "negate::sentiment_db.dart::SentimentLog"
+"drift::src::runtime::data_class.dart::Insertable" <|-- "negate::sentiment_db.dart::SentimentLog"
+
+class "negate::sentiment_db.dart::SentimentLogsCompanion" {
+  +Value<int> id
+  +Value<String> sentence
+  +Value<double> score
+  {static} +Insertable<SentimentLog> custom()
+  +SentimentLogsCompanion copyWith()
+  +Map<String, Expression<dynamic>> toColumns()
+  +String toString()
+}
+
+"negate::sentiment_db.dart::SentimentLogsCompanion" o-- "drift::src::runtime::data_class.dart::Value<int>"
+"negate::sentiment_db.dart::SentimentLogsCompanion" o-- "drift::src::runtime::data_class.dart::Value<String>"
+"negate::sentiment_db.dart::SentimentLogsCompanion" o-- "drift::src::runtime::data_class.dart::Value<double>"
+"drift::src::runtime::data_class.dart::UpdateCompanion" <|-- "negate::sentiment_db.dart::SentimentLogsCompanion"
+
+class "negate::sentiment_db.dart::$SentimentLogsTable" {
+  +GeneratedDatabase attachedDatabase
+  -String? _alias
+  {static} -VerificationMeta _idMeta
+  +GeneratedColumn<int> id
+  {static} -VerificationMeta _sentenceMeta
+  +GeneratedColumn<String> sentence
+  {static} -VerificationMeta _scoreMeta
+  +GeneratedColumn<double> score
+  +List<GeneratedColumn<dynamic>> $columns
+  +String aliasedName
+  +String actualTableName
+  +Set<GeneratedColumn<dynamic>> $primaryKey
+  +VerificationContext validateIntegrity()
+  +SentimentLog map()
+  +$SentimentLogsTable createAlias()
+}
+
+"negate::sentiment_db.dart::$SentimentLogsTable" o-- "drift::src::runtime::api::runtime_api.dart::GeneratedDatabase"
+"negate::sentiment_db.dart::$SentimentLogsTable" o-- "drift::src::runtime::data_verification.dart::VerificationMeta"
+"negate::sentiment_db.dart::$SentimentLogsTable" o-- "drift::src::runtime::query_builder::query_builder.dart::GeneratedColumn<int>"
+"negate::sentiment_db.dart::$SentimentLogsTable" o-- "drift::src::runtime::query_builder::query_builder.dart::GeneratedColumn<String>"
+"negate::sentiment_db.dart::$SentimentLogsTable" o-- "drift::src::runtime::query_builder::query_builder.dart::GeneratedColumn<double>"
+"negate::sentiment_db.dart::SentimentLogs" <|-- "negate::sentiment_db.dart::$SentimentLogsTable"
+"drift::src::runtime::query_builder::query_builder.dart::TableInfo" <|-- "negate::sentiment_db.dart::$SentimentLogsTable"
+
+abstract class "negate::sentiment_db.dart::_$SentimentDB" {
+  +$SentimentLogsTable sentimentLogs
+  +Iterable<TableInfo<Table, dynamic>> allTables
+  +List<DatabaseSchemaEntity> allSchemaEntities
+}
+
+"negate::sentiment_db.dart::_$SentimentDB" o-- "negate::sentiment_db.dart::$SentimentLogsTable"
+"drift::src::runtime::api::runtime_api.dart::GeneratedDatabase" <|-- "negate::sentiment_db.dart::_$SentimentDB"
+
+
+@enduml

@@ -1,14 +1,22 @@
-
 import 'package:negate/logger/logger.dart';
 import 'package:negate/sentiment_db.dart';
 
-class AndroidLogger implements SentenceLogger {
+class AndroidLogger extends SentenceLogger {
+  static final AndroidLogger _instance = AndroidLogger.init();
 
-  static Future<void> startLogger(TfliteRequest request) async {
-    await SentenceLogger.startLogger(request);
+  factory AndroidLogger() {
+    return _instance;
   }
 
-  static Future<void> Function(TfliteRequest) getLoggerFactory() {
-    return AndroidLogger.startLogger;
+  AndroidLogger.init() : super.init();
+
+  @override
+  Future<void> startLogger(TfliteRequest request) async {
+    await super.startLogger(request);
+  }
+
+  @override
+  Future<void> Function(TfliteRequest) getLogger() {
+    return startLogger;
   }
 }

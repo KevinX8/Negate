@@ -14,9 +14,13 @@ part 'sentiment_db.g.dart';
 
 class SentimentLogs extends Table {
 
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get sentence => text().withLength(min: 6, max: 50)();
-  RealColumn get score => real()();
+  TextColumn get name => text().withLength(min: 3, max: 20)();
+  IntColumn get hour => integer()();
+  IntColumn get timeUsed => integer()();
+  RealColumn get avgScore => real()();
+
+  @override
+  Set<Column> get primaryKey => {name, hour};
 }
 
 @DriftDatabase(tables: [SentimentLogs])
