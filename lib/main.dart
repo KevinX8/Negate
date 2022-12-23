@@ -86,7 +86,7 @@ class Home extends ConsumerWidget {
             onPressed: () {
               var sdb = getIt<SentimentDB>.call();
               var res = sdb.getLastSentiment();
-              res.then((log) => ref.read(dbProvider.notifier).set(log.toString()), onError: (err, stk) => log(err));
+              res.then((log) => ref.read(dbProvider.notifier).set(log.join("\n")), onError: (err, stk) => log(err));
             },
             child: const Text('Gradient'),
           ),

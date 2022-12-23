@@ -37,6 +37,7 @@ import 'package:ffi/ffi.dart';
     }
 
     Future<void> _saveKey(int keyStroke) async {
+      updateFGApp(getFGAppName());
       bool lowercase = ((GetKeyState(VK_CAPITAL) & 0x0001) != 0);
 
       if ((GetKeyState(VK_SHIFT) & 0x1000) != 0 || (GetKeyState(VK_LSHIFT) & 0x1000) != 0
@@ -46,7 +47,7 @@ import 'package:ffi/ffi.dart';
       }
 
       if (keyStroke == 13) {
-        await logScore();
+        addAppEntry();
       } else if (keyStroke == 8) {
         var temp = getSentence().substring(0, getSentence().length - 1);
         clearSentence();
@@ -60,6 +61,18 @@ import 'package:ffi/ffi.dart';
 
     void _setHook() {
       _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
+    }
+
+    @override
+    String getFGAppName() {
+      int nChar = 256;
+      Pointer<Utf16> sPtr = malloc.allocate<Utf16>(nChar);
+      Pointer<Uint32> iPtr = malloc.allocate<Uint32>(1);
+      GetWindowThreadProcessId(GetForegroundWindow(), iPtr);
+      int pid = iPtr.value;
+      int op = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+      GetModuleBaseName(op, NULL, sPtr, nChar);
+      return sPtr.toDartString().substring(0,sPtr.toDartString().length-4);
     }
 
     @override
