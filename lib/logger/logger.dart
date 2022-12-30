@@ -65,10 +65,6 @@ class SentenceLogger {
     request.sendDriftIsolate.send(_iso.connectPort);
   }
 
-  Future<void> Function(TfliteRequest) getLogger() {
-    throw UnsupportedError("Platform not supported");
-  }
-
   String getSentence() {
     return SentenceLogger._sentence.toString();
   }
@@ -93,16 +89,25 @@ class SentenceLogger {
     double score = analyser.classify(getSentence());
     log(score.toString());
     clearSentence();
-    if (_appMap.containsKey(name)) {
-      int timeUsedSince = DateTime.now().difference(_appMap[name]!.lastTimeUsed).inMinutes;
-      double totalTimeUsed = _appMap[name]!.totalTimeUsed + timeUsedSince;
-      double avgScore = (_appMap[name]!.avgScore + score) / (_appMap[name]!.numCalled + 1);
-      _appMap[name] = AppList(DateTime.now() , totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
-    } else {
-      _appMap.putIfAbsent(name, () => AppList(DateTime.now(), 0, score, 1));
+
+    var now = DateTime.now();
+    //Update average score for all apps used in the last 10 minutes as well
+    var appsInPeriod = _appMap.entries.where((element) => element.value.lastTimeUsed.difference(now).inMinutes <= 10);
+    for (var app in appsInPeriod) {
+      if (app.key == name) continue;
+      app.value.avgScore = (app.value.avgScore + score) / (++app.value.numCalled);
     }
 
-    if (DateTime.now().minute % _updateFreq == 0 && !_dbUpdated) {
+    if (_appMap.containsKey(name)) {
+      int timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed).inMinutes;
+      double totalTimeUsed = _appMap[name]!.totalTimeUsed + timeUsedSince;
+      double avgScore = (_appMap[name]!.avgScore + score) / (_appMap[name]!.numCalled + 1);
+      _appMap[name] = AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
+    } else {
+      _appMap.putIfAbsent(name, () => AppList(now, 0, score, 1));
+    }
+
+    if (now.minute % _updateFreq == 0 && !_dbUpdated) {
       logToDB();
       _dbUpdated = true;
     } else {
@@ -110,19 +115,15 @@ class SentenceLogger {
     }
   }
 
-  String getFGAppName() {
-    throw UnsupportedError("Platform not supported");
-  }
-
   void updateFGApp(String name) {
+    DateTime now = DateTime.now();
     if (name == _lastUsedApp) {
       return;
     }
     if (_appMap.containsKey(name)) {
-      DateTime now = DateTime.now();
       _appMap[name]!.totalTimeUsed += now
           .difference(_appMap[name]!.lastTimeUsed)
-          .inMinutes;
+          .inSeconds.toDouble() / 60.toDouble();
       _appMap[name]!.lastTimeUsed = now;
     }
     _lastUsedApp = name;

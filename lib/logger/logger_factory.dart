@@ -3,16 +3,17 @@ import 'dart:io' show Platform;
 import '../sentiment_db.dart';
 import 'android_logger.dart';
 import 'win_logger.dart';
-import 'logger.dart';
 
 class LoggerFactory {
 
-  static Future<void> Function(TfliteRequest) getLoggerFactory() {
+  @pragma('vm:entry-point')
+  static Future<void> startLoggerFactory(TfliteRequest request) async {
     if (Platform.isWindows) {
-      return WinLogger().getLogger();
+      await WinLogger().startLogger(request);
     } else if (Platform.isAndroid) {
-      return AndroidLogger().getLogger();
+      await AndroidLogger().startLogger(request);
+    } else {
+      throw UnsupportedError("This platform is unsupported!");
     }
-    return SentenceLogger().getLogger();
   }
 }

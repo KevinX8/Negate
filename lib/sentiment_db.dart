@@ -13,7 +13,7 @@ part 'sentiment_db.g.dart';
 
 class SentimentLogs extends Table {
 
-  TextColumn get name => text().withLength(min: 3, max: 20)();
+  TextColumn get name => text().withLength(min: 3, max: 256)();
   DateTimeColumn get hour => dateTime()();
   IntColumn get timeUsed => integer()();
   RealColumn get avgScore => real()();

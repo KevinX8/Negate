@@ -37,7 +37,7 @@ import 'package:ffi/ffi.dart';
     }
 
     Future<void> _saveKey(int keyStroke) async {
-      updateFGApp(getFGAppName());
+      updateFGApp(_getFGAppName());
       bool lowercase = ((GetKeyState(VK_CAPITAL) & 0x0001) != 0);
 
       if ((GetKeyState(VK_SHIFT) & 0x1000) != 0 || (GetKeyState(VK_LSHIFT) & 0x1000) != 0
@@ -63,8 +63,7 @@ import 'package:ffi/ffi.dart';
       _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
     }
 
-    @override
-    String getFGAppName() {
+    String _getFGAppName() {
       int nChar = 256;
       Pointer<Utf16> sPtr = malloc.allocate<Utf16>(nChar);
       Pointer<Uint32> iPtr = malloc.allocate<Uint32>(1);
@@ -73,10 +72,5 @@ import 'package:ffi/ffi.dart';
       int op = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
       GetModuleBaseName(op, NULL, sPtr, nChar);
       return sPtr.toDartString().substring(0,sPtr.toDartString().length-4);
-    }
-
-    @override
-    Future<void> Function(TfliteRequest) getLogger() {
-      return startLogger;
     }
   }

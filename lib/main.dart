@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:negate/logger/logger_factory.dart';
@@ -38,9 +39,13 @@ Future<void> main() async {
   var analyser = SentimentAnalysis();
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
-  Future<void> Function(TfliteRequest) loggerFunc = LoggerFactory.getLoggerFactory();
 
-  await Isolate.spawn(loggerFunc, TfliteRequest(rPort.sendPort, dbString, tfp));
+  if (Platform.isAndroid) {
+        LoggerFactory.startLoggerFactory(TfliteRequest(rPort.sendPort, dbString, tfp));
+  } else {
+    await Isolate.spawn(
+        LoggerFactory.startLoggerFactory, TfliteRequest(rPort.sendPort, dbString, tfp));
+  }
 
   var iPort = await rPort.first as SendPort;
   var isolate = DriftIsolate.fromConnectPort(iPort);

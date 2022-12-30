@@ -172,7 +172,7 @@ class $SentimentLogsTable extends SentimentLogs
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
       additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 20),
+          GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 256),
       type: DriftSqlType.string,
       requiredDuringInsert: true);
   static const VerificationMeta _hourMeta = const VerificationMeta('hour');

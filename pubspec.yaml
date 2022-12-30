@@ -49,6 +49,8 @@ dependencies:
     git:
       url: https://github.com/Miko2x/tflite_flutter_plugin
       ref: master
+  flutter_foreground_task: ^3.10.0
+  flutter_accessibility_service: ^0.2.2
 
 dev_dependencies:
   drift_dev: ^2.3.0
