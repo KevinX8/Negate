@@ -95,13 +95,23 @@ class SentenceLogger {
     var appsInPeriod = _appMap.entries.where((element) => element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
       if (app.key == name) continue;
-      app.value.avgScore = (app.value.avgScore + score) / (++app.value.numCalled);
+      app.value.avgScore = ((app.value.avgScore * app.value.numCalled) + score) / (++app.value.numCalled);
     }
 
     if (_appMap.containsKey(name)) {
-      int timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed).inMinutes;
+      double timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
       double totalTimeUsed = _appMap[name]!.totalTimeUsed + timeUsedSince;
-      double avgScore = (_appMap[name]!.avgScore + score) / (_appMap[name]!.numCalled + 1);
+      double avgScore = ((_appMap[name]!.avgScore * _appMap[name]!.numCalled) + score) / (_appMap[name]!.numCalled + 1);
+
+      //If the next hour has been reached reset the average score and time used
+      if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
+        avgScore = score;
+        if (timeUsedSince / now.minute > 1) {
+          totalTimeUsed = now.minute.toDouble();
+        } else {
+          totalTimeUsed = timeUsedSince;
+        }
+      }
       _appMap[name] = AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
     } else {
       _appMap.putIfAbsent(name, () => AppList(now, 0, score, 1));

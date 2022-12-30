@@ -21,7 +21,7 @@ final dbProvider = StateNotifierProvider((ref) {
 final getIt = GetIt.instance;
 
 class DBMonitor extends StateNotifier<String> {
-  DBMonitor(): super("poop");
+  DBMonitor(): super("Refresh Logs Below!");
 
   void set(str) => state = str;
 }
@@ -68,10 +68,10 @@ class Home extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
-      title: 'Flutter Tutorial',
+      title: 'Negate Mental Health Tracker',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Flutter Text Widget Tutorial'),
+          title: const Text('Sentiment Log UI'),
         ),
         body: Center(
           child: Consumer(
@@ -93,7 +93,7 @@ class Home extends ConsumerWidget {
               var res = sdb.getLastSentiment();
               res.then((log) => ref.read(dbProvider.notifier).set(log.join("\n")), onError: (err, stk) => log(err));
             },
-            child: const Text('Gradient'),
+            child: const Text('Update logs'),
           ),
         ],
       ),
