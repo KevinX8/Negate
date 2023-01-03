@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_accessibility_service/accessibility_event.dart';
+import 'package:flutter_accessibility_service/constants.dart';
 import 'package:flutter_accessibility_service/flutter_accessibility_service.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:negate/logger/logger.dart';
@@ -60,6 +61,10 @@ class AndroidLogger extends SentenceLogger {
   }
 
   static void _accessibilityListener(AccessibilityEvent event) {
+    if (event.eventType == EventType.typeWindowStateChanged) {
+      AndroidLogger().updateFGApp(event.packageName!);
+      return;
+    }
     var textNow = event.nodesText![0];
     log(textNow);
     if (textNow.length == 1) {

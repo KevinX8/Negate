@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi';
 
 import 'package:negate/sentiment_db.dart';
@@ -8,6 +9,7 @@ import 'package:ffi/ffi.dart';
   class WinLogger extends SentenceLogger {
     static final WinLogger _instance = WinLogger.init();
     static int _keyHook = 0;
+    static int _mouseHook = 0;
 
     factory WinLogger() {
       return _instance;
@@ -36,6 +38,13 @@ import 'package:ffi/ffi.dart';
       return CallNextHookEx(_keyHook, nCode, wParam, lParam);
     }
 
+    static int _mouseCallback(int nCode, int wParam, int lParam) {
+      if (wParam == WM_LBUTTONDOWN) {
+          WinLogger().updateFGApp(WinLogger()._getFGAppName());
+      }
+      return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+    }
+
     Future<void> _saveKey(int keyStroke) async {
       updateFGApp(_getFGAppName());
       bool lowercase = ((GetKeyState(VK_CAPITAL) & 0x0001) != 0);
@@ -61,6 +70,7 @@ import 'package:ffi/ffi.dart';
 
     void _setHook() {
       _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, Pointer.fromFunction<CallWndProc>(_hookCallback, 0), NULL, 0);
+      _mouseHook = SetWindowsHookEx(WH_MOUSE_LL, Pointer.fromFunction<CallWndProc>(_mouseCallback, 0), NULL, 0);
     }
 
     String _getFGAppName() {

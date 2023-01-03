@@ -135,6 +135,8 @@ class SentenceLogger {
           .difference(_appMap[name]!.lastTimeUsed)
           .inSeconds.toDouble() / 60.toDouble();
       _appMap[name]!.lastTimeUsed = now;
+    } else {
+      _appMap.putIfAbsent(name, () => AppList(now, 0, 0.5, 1));
     }
     _lastUsedApp = name;
   }

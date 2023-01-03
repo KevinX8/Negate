@@ -67,6 +67,8 @@ class Home extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    var sdb = getIt<SentimentDB>.call();
+    var res = sdb.getLastSentiment();
     return MaterialApp(
       title: 'Negate Mental Health Tracker',
       home: Scaffold(
@@ -74,11 +76,16 @@ class Home extends ConsumerWidget {
           title: const Text('Sentiment Log UI'),
         ),
         body: Center(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final str = ref.watch(dbProvider);
-              return Text('$str');
-            }
+          child: ListView.builder(
+              itemBuilder: (BuildContext context, int index) {
+                return Container(
+                  height: 50,
+                  child: ListTile(
+                    leading: Icon(Icons.home),
+                    title: Text(ref.),
+                  )
+                )
+              }
           )
         ),
         persistentFooterButtons: [
@@ -89,8 +96,8 @@ class Home extends ConsumerWidget {
               textStyle: const TextStyle(fontSize: 20),
             ),
             onPressed: () {
-              var sdb = getIt<SentimentDB>.call();
-              var res = sdb.getLastSentiment();
+              sdb = getIt<SentimentDB>.call();
+              res = sdb.getLastSentiment();
               res.then((log) => ref.read(dbProvider.notifier).set(log.join("\n")), onError: (err, stk) => log(err));
             },
             child: const Text('Update logs'),
