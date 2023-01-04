@@ -40,7 +40,7 @@ dependencies:
   ffi: ^2.0.1
   path_provider: ^2.0.11
   path: ^1.8.2
-  drift: ^2.3.0
+  drift: ^2.4.1
   flutter_riverpod: ^2.1.1
   get_it: ^7.2.0
   sqlite3: ^1.9.1
@@ -51,6 +51,8 @@ dependencies:
       ref: master
   flutter_foreground_task: ^3.10.0
   flutter_accessibility_service: ^0.2.2
+  device_apps: ^2.2.0
+  fl_chart: ^0.55.2
 
 dev_dependencies:
   drift_dev: ^2.3.0

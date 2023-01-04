@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:negate/sentiment_db.dart';
 import 'package:negate/logger/logger.dart';
@@ -40,7 +43,14 @@ import 'package:ffi/ffi.dart';
 
     static int _mouseCallback(int nCode, int wParam, int lParam) {
       if (wParam == WM_LBUTTONDOWN) {
-          WinLogger().updateFGApp(WinLogger()._getFGAppName());
+          var name = WinLogger()._getFGAppName();
+          WinLogger().updateFGApp(name);
+          if (WinLogger().getAppIcon(name) == null) {
+            var icon = WinLogger().findAppIcon(GetForegroundWindow());
+            if (icon != null) {
+              WinLogger().addAppIcon(name, icon);
+            }
+          }
       }
       return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
@@ -82,5 +92,69 @@ import 'package:ffi/ffi.dart';
       int op = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
       GetModuleBaseName(op, NULL, sPtr, nChar);
       return sPtr.toDartString().substring(0,sPtr.toDartString().length-4);
+    }
+
+    Uint8List? findAppIcon(int hWnd, {background = 0xffffff, hover = false}) {
+      var icon = SendMessage(hWnd, WM_GETICON, 2, 0); // ICON_SMALL2 - User Made Apps
+      if (icon == 0) icon = GetClassLongPtr(hWnd, -14); // GCLP_HICON - Microsoft Win Apps
+      if (icon == 0) {
+        return null;
+      }
+
+      final piconinfo = calloc<ICONINFO>();
+
+      GetIconInfo(icon, piconinfo);
+      final hICON = calloc<BITMAP>();
+      GetObject(piconinfo.ref.hbmColor, sizeOf<BITMAP>(), hICON);
+
+      final int hScreen = GetDC(hWnd);
+      final int hDC = CreateCompatibleDC(hScreen);
+      final int hBitmap = CreateCompatibleBitmap(hScreen, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+      SelectObject(hDC, hBitmap);
+      final clientRect = calloc<RECT>()
+        ..ref.left = 0
+        ..ref.right = GetSystemMetrics(SM_CXICON)
+        ..ref.bottom = GetSystemMetrics(SM_CYICON)
+        ..ref.top = 0;
+      FillRect(hDC, clientRect, CreateSolidBrush(background));
+      DrawIcon(hDC, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), icon);
+
+      final bmpScreen = calloc<BITMAP>();
+      GetObject(hBitmap, sizeOf<BITMAP>(), bmpScreen);
+      final bitmapFileHeader = calloc<BITMAPFILEHEADER>();
+      final bitmapInfoHeader = calloc<BITMAPINFOHEADER>()
+        ..ref.biSize = sizeOf<BITMAPINFOHEADER>()
+        ..ref.biWidth = bmpScreen.ref.bmWidth
+        ..ref.biHeight = bmpScreen.ref.bmHeight
+        ..ref.biPlanes = 1
+        ..ref.biBitCount = 32
+        ..ref.biCompression = BI_RGB;
+
+      final dwBmpSize = ((bmpScreen.ref.bmWidth * bitmapInfoHeader.ref.biBitCount + 31) / 32 * 4 * bmpScreen.ref.bmHeight).toInt();
+
+      final lpBitmap = calloc<Uint8>(dwBmpSize);
+      GetDIBits(hDC, hBitmap, 0, bmpScreen.ref.bmHeight, lpBitmap, bitmapInfoHeader.cast(), DIB_RGB_COLORS);
+
+      final dwSizeOfDIB = dwBmpSize + sizeOf<BITMAPFILEHEADER>() + sizeOf<BITMAPINFOHEADER>();
+      bitmapFileHeader.ref.bfOffBits = sizeOf<BITMAPFILEHEADER>() + sizeOf<BITMAPINFOHEADER>();
+
+      bitmapFileHeader.ref.bfSize = dwSizeOfDIB;
+      bitmapFileHeader.ref.bfType = 0x4D42; // BM
+
+      var b = BytesBuilder();
+      b.add(Pointer<Uint8>.fromAddress(bitmapFileHeader.address).asTypedList(sizeOf<BITMAPFILEHEADER>()));
+      b.add(Pointer<Uint8>.fromAddress(bitmapInfoHeader.address).asTypedList(sizeOf<BITMAPINFOHEADER>()));
+      b.add(lpBitmap.asTypedList(dwBmpSize));
+      DeleteDC(hDC);
+      DeleteObject(hBitmap);
+      ReleaseDC(NULL, hScreen);
+      free(bmpScreen);
+      free(bitmapFileHeader);
+      free(bitmapInfoHeader);
+      free(lpBitmap);
+      free(piconinfo);
+      free(hICON);
+      free(clientRect);
+      return b.takeBytes();
     }
   }

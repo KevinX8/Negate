@@ -1,3 +1,5 @@
+import 'dart:collection';
+import 'dart:developer';
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
@@ -22,7 +24,15 @@ class SentimentLogs extends Table {
   Set<Column> get primaryKey => {name, hour};
 }
 
-@DriftDatabase(tables: [SentimentLogs])
+class AppIcons extends Table {
+  TextColumn get name => text().withLength(min: 3, max: 256)();
+  BlobColumn get icon => blob()();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
+@DriftDatabase(tables: [SentimentLogs, AppIcons])
 class SentimentDB extends _$SentimentDB {
   // we tell the database where to store the data with this constructor
   SentimentDB() : super(_openConnection());
@@ -34,8 +44,51 @@ class SentimentDB extends _$SentimentDB {
   @override
   int get schemaVersion => 1;
 
-  Future<List<SentimentLog>> getLastSentiment() async {
-    return await (select(sentimentLogs)..orderBy([(t) => OrderingTerm(expression: sentimentLogs.name, mode: OrderingMode.desc)])).get();
+  Future<Uint8List> getAppIcon(String name) async {
+    var ico = await (select(appIcons)..where((tbl) => tbl.name.equals(name))).getSingle();
+    return ico.icon;
+  }
+
+  Future<List<double>> getAvgHourlySentiment(DateTime date) async {
+    var query = (select(sentimentLogs)..where((tbl) => tbl.hour.year.equals(date.year)
+        & tbl.hour.month.equals(date.month)
+        & tbl.hour.day.equals(date.day)));
+    var res = await query.get();
+    var avgs = List<double>.filled(24, 0);
+    var totalTime = List<int>.filled(24, 0);
+    for (var i in res) {
+      avgs[i.hour.hour] += i.avgScore * i.timeUsed;
+      totalTime[i.hour.hour] += i.timeUsed;
+    }
+    for (int i = 0; i < 24;i++) {
+      if (avgs[i] == 0) {
+        continue;
+      }
+      avgs[i] /= totalTime[i];
+    }
+    return avgs;
+  }
+
+  Future<List<SentimentLog>> getDaySentiment(DateTime time) async {
+    return await (select(sentimentLogs)..where((tbl) {
+      return tbl.hour.equals(time.alignDateTime(const Duration(hours: 1)));
+    })..orderBy(
+        [(t) => OrderingTerm(expression: sentimentLogs.timeUsed, mode: OrderingMode.desc)]
+    )).get();
+  }
+
+  static Future<void> addAppIcons(AddAppIconRequest r) async {
+    var isolate = DriftIsolate.fromConnectPort(r.iPort);
+    var sdb = SentimentDB.connect(await isolate.connect());
+    await sdb.batch((batch) {
+      List<AppIconsCompanion> icons = <AppIconsCompanion>[];
+      for (var icon in r.icons.entries) {
+        var entry = AppIconsCompanion(name: Value(icon.key),
+            icon: Value(icon.value));
+        icons.add(entry);
+      }
+      batch.insertAllOnConflictUpdate(sdb.appIcons, icons);
+    });
   }
 
   static Future<void> addSentiments(AddSentimentRequest r) async {
@@ -44,43 +97,46 @@ class SentimentDB extends _$SentimentDB {
     await sdb.batch((batch) {
       List<SentimentLogsCompanion> logs = <SentimentLogsCompanion>[];
       for (var log in r.sentiments.entries) {
-        var entry = SentimentLogsCompanion(name: Value(log.key), hour: Value(alignDateTime(log.value.lastTimeUsed, const Duration(hours: 1))),
+        var entry = SentimentLogsCompanion(name: Value(log.key), hour: Value(
+            log.value.lastTimeUsed.alignDateTime(const Duration(hours: 1))),
             timeUsed: Value(log.value.totalTimeUsed.ceil()), avgScore: Value(log.value.avgScore));
         logs.add(entry);
       }
       batch.insertAllOnConflictUpdate(sdb.sentimentLogs, logs);
     });
   }
+}
 
-  static DateTime alignDateTime(DateTime dt, Duration alignment,
+extension Alignment on DateTime {
+  DateTime alignDateTime(Duration alignment,
       [bool roundUp = false]) {
     assert(alignment >= Duration.zero);
-    if (alignment == Duration.zero) return dt;
+    if (alignment == Duration.zero) return this;
     final correction = Duration(
         days: 0,
         hours: alignment.inDays > 0
-            ? dt.hour
+            ? hour
             : alignment.inHours > 0
-            ? dt.hour % alignment.inHours
+            ? hour % alignment.inHours
             : 0,
         minutes: alignment.inHours > 0
-            ? dt.minute
+            ? minute
             : alignment.inMinutes > 0
-            ? dt.minute % alignment.inMinutes
+            ? minute % alignment.inMinutes
             : 0,
         seconds: alignment.inMinutes > 0
-            ? dt.second
+            ? second
             : alignment.inSeconds > 0
-            ? dt.second % alignment.inSeconds
+            ? second % alignment.inSeconds
             : 0,
         milliseconds: alignment.inSeconds > 0
-            ? dt.millisecond
+            ? millisecond
             : alignment.inMilliseconds > 0
-            ? dt.millisecond % alignment.inMilliseconds
+            ? millisecond % alignment.inMilliseconds
             : 0,
-        microseconds: alignment.inMilliseconds > 0 ? dt.microsecond : 0);
-    if (correction == Duration.zero) return dt;
-    final corrected = dt.subtract(correction);
+        microseconds: alignment.inMilliseconds > 0 ? microsecond : 0);
+    if (correction == Duration.zero) return this;
+    final corrected = subtract(correction);
     final result = roundUp ? corrected.add(alignment) : corrected;
     return result;
   }
@@ -118,8 +174,15 @@ class TfliteRequest extends IsolateStartRequest {
 }
 
 class AddSentimentRequest {
-  final Map<String, AppList> sentiments;
+  final HashMap<String, AppList> sentiments;
   final SendPort iPort;
 
   AddSentimentRequest(this.sentiments, this.iPort);
+}
+
+class AddAppIconRequest {
+  final HashMap<String, Uint8List> icons;
+  final SendPort iPort;
+
+  AddAppIconRequest(this.icons, this.iPort);
 }

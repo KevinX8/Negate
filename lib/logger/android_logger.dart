@@ -1,7 +1,7 @@
 import 'dart:developer';
-import 'dart:isolate';
 
-import 'package:flutter/services.dart';
+import 'package:device_apps/device_apps.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_accessibility_service/accessibility_event.dart';
 import 'package:flutter_accessibility_service/constants.dart';
 import 'package:flutter_accessibility_service/flutter_accessibility_service.dart';
@@ -62,7 +62,13 @@ class AndroidLogger extends SentenceLogger {
 
   static void _accessibilityListener(AccessibilityEvent event) {
     if (event.eventType == EventType.typeWindowStateChanged) {
-      AndroidLogger().updateFGApp(event.packageName!);
+      event.packageTitle().then((title) => AndroidLogger().updateFGApp(title!));
+      if (AndroidLogger().getAppIcon(event.packageName!) == null) {
+        DeviceApps.getApp(event.packageName!, true).then((app) {
+          var appWIcon = (app as ApplicationWithIcon?)!;
+          AndroidLogger().addAppIcon(appWIcon.appName, appWIcon.icon);
+        });
+      }
       return;
     }
     var textNow = event.nodesText![0];
@@ -72,6 +78,16 @@ class AndroidLogger extends SentenceLogger {
     }
     AndroidLogger().clearSentence();
     AndroidLogger().writeToSentence(textNow);
-    AndroidLogger().updateFGApp(event.packageName!);
+    event.packageTitle().then((title) => AndroidLogger().updateFGApp(title!));
+  }
+}
+
+extension NameConversion on AccessibilityEvent {
+  Future<String?> packageTitle() async {
+    if (packageName != null) {
+      var app = await DeviceApps.getApp(packageName!);
+      return app?.appName;
+    }
+    return null;
   }
 }

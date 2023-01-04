@@ -253,13 +253,187 @@ class $SentimentLogsTable extends SentimentLogs
   }
 }
 
+class AppIcon extends DataClass implements Insertable<AppIcon> {
+  final String name;
+  final Uint8List icon;
+  const AppIcon({required this.name, required this.icon});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['name'] = Variable<String>(name);
+    map['icon'] = Variable<Uint8List>(icon);
+    return map;
+  }
+
+  AppIconsCompanion toCompanion(bool nullToAbsent) {
+    return AppIconsCompanion(
+      name: Value(name),
+      icon: Value(icon),
+    );
+  }
+
+  factory AppIcon.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppIcon(
+      name: serializer.fromJson<String>(json['name']),
+      icon: serializer.fromJson<Uint8List>(json['icon']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'name': serializer.toJson<String>(name),
+      'icon': serializer.toJson<Uint8List>(icon),
+    };
+  }
+
+  AppIcon copyWith({String? name, Uint8List? icon}) => AppIcon(
+        name: name ?? this.name,
+        icon: icon ?? this.icon,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('AppIcon(')
+          ..write('name: $name, ')
+          ..write('icon: $icon')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(name, $driftBlobEquality.hash(icon));
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppIcon &&
+          other.name == this.name &&
+          $driftBlobEquality.equals(other.icon, this.icon));
+}
+
+class AppIconsCompanion extends UpdateCompanion<AppIcon> {
+  final Value<String> name;
+  final Value<Uint8List> icon;
+  const AppIconsCompanion({
+    this.name = const Value.absent(),
+    this.icon = const Value.absent(),
+  });
+  AppIconsCompanion.insert({
+    required String name,
+    required Uint8List icon,
+  })  : name = Value(name),
+        icon = Value(icon);
+  static Insertable<AppIcon> custom({
+    Expression<String>? name,
+    Expression<Uint8List>? icon,
+  }) {
+    return RawValuesInsertable({
+      if (name != null) 'name': name,
+      if (icon != null) 'icon': icon,
+    });
+  }
+
+  AppIconsCompanion copyWith({Value<String>? name, Value<Uint8List>? icon}) {
+    return AppIconsCompanion(
+      name: name ?? this.name,
+      icon: icon ?? this.icon,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<Uint8List>(icon.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppIconsCompanion(')
+          ..write('name: $name, ')
+          ..write('icon: $icon')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppIconsTable extends AppIcons with TableInfo<$AppIconsTable, AppIcon> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppIconsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 256),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<Uint8List> icon = GeneratedColumn<Uint8List>(
+      'icon', aliasedName, false,
+      type: DriftSqlType.blob, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [name, icon];
+  @override
+  String get aliasedName => _alias ?? 'app_icons';
+  @override
+  String get actualTableName => 'app_icons';
+  @override
+  VerificationContext validateIntegrity(Insertable<AppIcon> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+          _iconMeta, icon.isAcceptableOrUnknown(data['icon']!, _iconMeta));
+    } else if (isInserting) {
+      context.missing(_iconMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {name};
+  @override
+  AppIcon map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppIcon(
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      icon: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}icon'])!,
+    );
+  }
+
+  @override
+  $AppIconsTable createAlias(String alias) {
+    return $AppIconsTable(attachedDatabase, alias);
+  }
+}
+
 abstract class _$SentimentDB extends GeneratedDatabase {
   _$SentimentDB(QueryExecutor e) : super(e);
   _$SentimentDB.connect(DatabaseConnection c) : super.connect(c);
   late final $SentimentLogsTable sentimentLogs = $SentimentLogsTable(this);
+  late final $AppIconsTable appIcons = $AppIconsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [sentimentLogs];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [sentimentLogs, appIcons];
 }

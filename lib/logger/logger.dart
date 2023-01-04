@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'dart:isolate';
@@ -6,6 +7,7 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:negate/sentiment_db.dart';
 
 import '../sentiment_analysis.dart';
@@ -23,6 +25,7 @@ class SentenceLogger {
   static final SentenceLogger _instance = SentenceLogger.init();
   static final StringBuffer _sentence = StringBuffer();
   static final HashMap<String, AppList> _appMap = HashMap<String, AppList>();
+  static final HashMap<String, Uint8List> _appIcons = HashMap<String, Uint8List>();
   static late DriftIsolate _iso;
   static late TfParams _tfp;
   static const int _updateFreq = 1; //update db every 5 minutes
@@ -139,5 +142,14 @@ class SentenceLogger {
       _appMap.putIfAbsent(name, () => AppList(now, 0, 0.5, 1));
     }
     _lastUsedApp = name;
+  }
+
+  Uint8List? getAppIcon(String name) {
+    return _appIcons[name];
+  }
+
+  void addAppIcon(String name, Uint8List icon) {
+    _appIcons.putIfAbsent(name, () => icon);
+    Isolate.spawn(SentimentDB.addAppIcons, AddAppIconRequest(_appIcons, _iso.connectPort));
   }
 }
