@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'dart:isolate';
@@ -7,7 +6,6 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:negate/sentiment_db.dart';
 
 import '../sentiment_analysis.dart';
@@ -25,10 +23,11 @@ class SentenceLogger {
   static final SentenceLogger _instance = SentenceLogger.init();
   static final StringBuffer _sentence = StringBuffer();
   static final HashMap<String, AppList> _appMap = HashMap<String, AppList>();
-  static final HashMap<String, Uint8List> _appIcons = HashMap<String, Uint8List>();
+  static late final HashSet<String> _appIcons;
   static late DriftIsolate _iso;
   static late TfParams _tfp;
   static const int _updateFreq = 1; //update db every 5 minutes
+  static final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
   String _lastUsedApp = "";
   bool _dbUpdated = false;
 
@@ -65,6 +64,9 @@ class SentenceLogger {
 
     _iso = await rPort.first as DriftIsolate;
     _tfp = request.tfp;
+    var sdb = SentimentDB.connect(await _iso.connect());
+    _appIcons = await sdb.getListOfIcons();
+    sdb.close();
     request.sendDriftIsolate.send(_iso.connectPort);
   }
 
@@ -114,6 +116,7 @@ class SentenceLogger {
         } else {
           totalTimeUsed = timeUsedSince;
         }
+        _appMap[name]!.numCalled = 0;
       }
       _appMap[name] = AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
     } else {
@@ -130,13 +133,23 @@ class SentenceLogger {
 
   void updateFGApp(String name) {
     DateTime now = DateTime.now();
-    if (name == _lastUsedApp) {
+    if (blacklist.hasMatch(name)) {
       return;
     }
     if (_appMap.containsKey(name)) {
-      _appMap[name]!.totalTimeUsed += now
-          .difference(_appMap[name]!.lastTimeUsed)
-          .inSeconds.toDouble() / 60.toDouble();
+      double timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed)
+          .inSeconds.toDouble() / 60;
+      if (name == _lastUsedApp) {
+        if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
+          if (timeUsedSince / now.minute > 1) {
+            _appMap[name]!.totalTimeUsed = now.minute.toDouble();
+          } else {
+            _appMap[name]!.totalTimeUsed = timeUsedSince;
+          }
+        } else {
+          _appMap[name]!.totalTimeUsed += timeUsedSince;
+        }
+      }
       _appMap[name]!.lastTimeUsed = now;
     } else {
       _appMap.putIfAbsent(name, () => AppList(now, 0, 0.5, 1));
@@ -144,12 +157,13 @@ class SentenceLogger {
     _lastUsedApp = name;
   }
 
-  Uint8List? getAppIcon(String name) {
-    return _appIcons[name];
+  bool hasAppIcon(String name) {
+    if (blacklist.hasMatch(name)) return true;
+    return _appIcons.contains(name);
   }
 
   void addAppIcon(String name, Uint8List icon) {
-    _appIcons.putIfAbsent(name, () => icon);
-    Isolate.spawn(SentimentDB.addAppIcons, AddAppIconRequest(_appIcons, _iso.connectPort));
+    _appIcons.add(name);
+    Isolate.spawn(SentimentDB.addAppIcon, AddAppIconRequest(name, icon, _iso.connectPort));
   }
 }

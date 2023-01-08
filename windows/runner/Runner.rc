@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.kevinx8" "\0"
-            VALUE "FileDescription", "negate" "\0"
+            VALUE "FileDescription", "Negate" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "negate" "\0"
+            VALUE "InternalName", "Negate" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2022 com.kevinx8. All rights reserved." "\0"
             VALUE "OriginalFilename", "negate.exe" "\0"
-            VALUE "ProductName", "negate" "\0"
+            VALUE "ProductName", "Negate" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

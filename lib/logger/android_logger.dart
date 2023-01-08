@@ -1,16 +1,18 @@
 import 'dart:developer';
 
 import 'package:device_apps/device_apps.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_accessibility_service/accessibility_event.dart';
 import 'package:flutter_accessibility_service/constants.dart';
 import 'package:flutter_accessibility_service/flutter_accessibility_service.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:negate/logger/logger.dart';
 import 'package:negate/sentiment_db.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AndroidLogger extends SentenceLogger {
   static final AndroidLogger _instance = AndroidLogger.init();
+  static final RegExp blacklist = RegExp(".*system.*|.*keyboard.*|.*input.*|"
+      ".*honeyboard.*|.*swiftkey.*|.*lawnchair.*|.*launcher.*");
 
   factory AndroidLogger() {
     return _instance;
@@ -48,9 +50,14 @@ class AndroidLogger extends SentenceLogger {
         allowWifiLock: false,
       ),
     );
-  await FlutterForegroundTask.startService(notificationTitle: "Sentiment Tracker",
-      notificationText: "Analyzing sentence sentiment");
+    var status = await Permission.notification.request();
+      if (status.isGranted) {
+        FlutterForegroundTask.startService(notificationTitle: "Sentiment Tracker",
+            notificationText: "Analyzing sentence sentiment");
+      }
+  }
 
+  Future<void> startAccessibility() async {
     bool status = await FlutterAccessibilityService.isAccessibilityPermissionEnabled();
     if (!status) {
       status = await FlutterAccessibilityService.requestAccessibilityPermission();
@@ -61,14 +68,19 @@ class AndroidLogger extends SentenceLogger {
   }
 
   static void _accessibilityListener(AccessibilityEvent event) {
+    if (blacklist.hasMatch(event.packageName!)){
+      return;
+    }
     if (event.eventType == EventType.typeWindowStateChanged) {
-      event.packageTitle().then((title) => AndroidLogger().updateFGApp(title!));
-      if (AndroidLogger().getAppIcon(event.packageName!) == null) {
-        DeviceApps.getApp(event.packageName!, true).then((app) {
-          var appWIcon = (app as ApplicationWithIcon?)!;
-          AndroidLogger().addAppIcon(appWIcon.appName, appWIcon.icon);
-        });
-      }
+      event.packageTitle().then((title) {
+        AndroidLogger().updateFGApp(title!);
+        if (!AndroidLogger().hasAppIcon(title)) {
+          DeviceApps.getApp(event.packageName!, true).then((app) {
+            var appWIcon = (app as ApplicationWithIcon?)!;
+            AndroidLogger().addAppIcon(appWIcon.appName, appWIcon.icon);
+          });
+        }
+      });
       return;
     }
     var textNow = event.nodesText![0];

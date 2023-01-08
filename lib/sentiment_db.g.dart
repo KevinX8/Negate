@@ -3,6 +3,98 @@
 part of 'sentiment_db.dart';
 
 // ignore_for_file: type=lint
+class $SentimentLogsTable extends SentimentLogs
+    with TableInfo<$SentimentLogsTable, SentimentLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SentimentLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 256),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _hourMeta = const VerificationMeta('hour');
+  @override
+  late final GeneratedColumn<DateTime> hour = GeneratedColumn<DateTime>(
+      'hour', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _timeUsedMeta =
+      const VerificationMeta('timeUsed');
+  @override
+  late final GeneratedColumn<int> timeUsed = GeneratedColumn<int>(
+      'time_used', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _avgScoreMeta =
+      const VerificationMeta('avgScore');
+  @override
+  late final GeneratedColumn<double> avgScore = GeneratedColumn<double>(
+      'avg_score', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [name, hour, timeUsed, avgScore];
+  @override
+  String get aliasedName => _alias ?? 'sentiment_logs';
+  @override
+  String get actualTableName => 'sentiment_logs';
+  @override
+  VerificationContext validateIntegrity(Insertable<SentimentLog> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('hour')) {
+      context.handle(
+          _hourMeta, hour.isAcceptableOrUnknown(data['hour']!, _hourMeta));
+    } else if (isInserting) {
+      context.missing(_hourMeta);
+    }
+    if (data.containsKey('time_used')) {
+      context.handle(_timeUsedMeta,
+          timeUsed.isAcceptableOrUnknown(data['time_used']!, _timeUsedMeta));
+    } else if (isInserting) {
+      context.missing(_timeUsedMeta);
+    }
+    if (data.containsKey('avg_score')) {
+      context.handle(_avgScoreMeta,
+          avgScore.isAcceptableOrUnknown(data['avg_score']!, _avgScoreMeta));
+    } else if (isInserting) {
+      context.missing(_avgScoreMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {name, hour};
+  @override
+  SentimentLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SentimentLog(
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      hour: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}hour'])!,
+      timeUsed: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}time_used'])!,
+      avgScore: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}avg_score'])!,
+    );
+  }
+
+  @override
+  $SentimentLogsTable createAlias(String alias) {
+    return $SentimentLogsTable(attachedDatabase, alias);
+  }
+}
+
 class SentimentLog extends DataClass implements Insertable<SentimentLog> {
   final String name;
   final DateTime hour;
@@ -161,12 +253,11 @@ class SentimentLogsCompanion extends UpdateCompanion<SentimentLog> {
   }
 }
 
-class $SentimentLogsTable extends SentimentLogs
-    with TableInfo<$SentimentLogsTable, SentimentLog> {
+class $AppIconsTable extends AppIcons with TableInfo<$AppIconsTable, AppIcon> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $SentimentLogsTable(this.attachedDatabase, [this._alias]);
+  $AppIconsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -175,31 +266,19 @@ class $SentimentLogsTable extends SentimentLogs
           GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 256),
       type: DriftSqlType.string,
       requiredDuringInsert: true);
-  static const VerificationMeta _hourMeta = const VerificationMeta('hour');
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
   @override
-  late final GeneratedColumn<DateTime> hour = GeneratedColumn<DateTime>(
-      'hour', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _timeUsedMeta =
-      const VerificationMeta('timeUsed');
+  late final GeneratedColumn<Uint8List> icon = GeneratedColumn<Uint8List>(
+      'icon', aliasedName, false,
+      type: DriftSqlType.blob, requiredDuringInsert: true);
   @override
-  late final GeneratedColumn<int> timeUsed = GeneratedColumn<int>(
-      'time_used', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
-  static const VerificationMeta _avgScoreMeta =
-      const VerificationMeta('avgScore');
+  List<GeneratedColumn> get $columns => [name, icon];
   @override
-  late final GeneratedColumn<double> avgScore = GeneratedColumn<double>(
-      'avg_score', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+  String get aliasedName => _alias ?? 'app_icons';
   @override
-  List<GeneratedColumn> get $columns => [name, hour, timeUsed, avgScore];
+  String get actualTableName => 'app_icons';
   @override
-  String get aliasedName => _alias ?? 'sentiment_logs';
-  @override
-  String get actualTableName => 'sentiment_logs';
-  @override
-  VerificationContext validateIntegrity(Insertable<SentimentLog> instance,
+  VerificationContext validateIntegrity(Insertable<AppIcon> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -209,47 +288,31 @@ class $SentimentLogsTable extends SentimentLogs
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('hour')) {
+    if (data.containsKey('icon')) {
       context.handle(
-          _hourMeta, hour.isAcceptableOrUnknown(data['hour']!, _hourMeta));
+          _iconMeta, icon.isAcceptableOrUnknown(data['icon']!, _iconMeta));
     } else if (isInserting) {
-      context.missing(_hourMeta);
-    }
-    if (data.containsKey('time_used')) {
-      context.handle(_timeUsedMeta,
-          timeUsed.isAcceptableOrUnknown(data['time_used']!, _timeUsedMeta));
-    } else if (isInserting) {
-      context.missing(_timeUsedMeta);
-    }
-    if (data.containsKey('avg_score')) {
-      context.handle(_avgScoreMeta,
-          avgScore.isAcceptableOrUnknown(data['avg_score']!, _avgScoreMeta));
-    } else if (isInserting) {
-      context.missing(_avgScoreMeta);
+      context.missing(_iconMeta);
     }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {name, hour};
+  Set<GeneratedColumn> get $primaryKey => {name};
   @override
-  SentimentLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+  AppIcon map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SentimentLog(
+    return AppIcon(
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      hour: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}hour'])!,
-      timeUsed: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}time_used'])!,
-      avgScore: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}avg_score'])!,
+      icon: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}icon'])!,
     );
   }
 
   @override
-  $SentimentLogsTable createAlias(String alias) {
-    return $SentimentLogsTable(attachedDatabase, alias);
+  $AppIconsTable createAlias(String alias) {
+    return $AppIconsTable(attachedDatabase, alias);
   }
 }
 
@@ -360,69 +423,6 @@ class AppIconsCompanion extends UpdateCompanion<AppIcon> {
           ..write('icon: $icon')
           ..write(')'))
         .toString();
-  }
-}
-
-class $AppIconsTable extends AppIcons with TableInfo<$AppIconsTable, AppIcon> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $AppIconsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 3, maxTextLength: 256),
-      type: DriftSqlType.string,
-      requiredDuringInsert: true);
-  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
-  @override
-  late final GeneratedColumn<Uint8List> icon = GeneratedColumn<Uint8List>(
-      'icon', aliasedName, false,
-      type: DriftSqlType.blob, requiredDuringInsert: true);
-  @override
-  List<GeneratedColumn> get $columns => [name, icon];
-  @override
-  String get aliasedName => _alias ?? 'app_icons';
-  @override
-  String get actualTableName => 'app_icons';
-  @override
-  VerificationContext validateIntegrity(Insertable<AppIcon> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('icon')) {
-      context.handle(
-          _iconMeta, icon.isAcceptableOrUnknown(data['icon']!, _iconMeta));
-    } else if (isInserting) {
-      context.missing(_iconMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {name};
-  @override
-  AppIcon map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return AppIcon(
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      icon: attachedDatabase.typeMapping
-          .read(DriftSqlType.blob, data['${effectivePrefix}icon'])!,
-    );
-  }
-
-  @override
-  $AppIconsTable createAlias(String alias) {
-    return $AppIconsTable(attachedDatabase, alias);
   }
 }
 

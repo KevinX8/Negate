@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:isolate';
 
@@ -14,7 +15,6 @@ import 'package:path/path.dart' as p;
 part 'sentiment_db.g.dart';
 
 class SentimentLogs extends Table {
-
   TextColumn get name => text().withLength(min: 3, max: 256)();
   DateTimeColumn get hour => dateTime()();
   IntColumn get timeUsed => integer()();
@@ -49,6 +49,43 @@ class SentimentDB extends _$SentimentDB {
     return ico.icon;
   }
 
+  Future<HashSet<String>> getListOfIcons() async {
+    var set = HashSet<String>();
+    var iconList = await (selectOnly(appIcons)..addColumns([appIcons.name])).get();
+    for (var ico in iconList) {
+      set.add(ico.read(appIcons.name)!);
+    }
+    return set;
+  }
+
+  Future<String> jsonLogs() async {
+    var query = select(sentimentLogs);
+    var res = await query.get();
+    return jsonEncode(res);
+  }
+
+  Future<List<MapEntry<String, List<double>>>> getRecommendations() async {
+    var query = select(sentimentLogs)..where((tbl) =>
+        tbl.hour.isBiggerOrEqualValue(DateTime.now().subtract(const Duration(days: 7))));
+    Map<String, List<double>> weeklyAverage = <String, List<double>>{};
+    Map<String, int> weeklyCount = <String, int>{};
+    var res = await query.get();
+    for (var log in res) {
+      if (weeklyAverage.containsKey(log.name)) {
+        weeklyAverage[log.name]![0] = ((weeklyAverage[log.name]![0] * weeklyCount[log.name]!) + log.avgScore) / (weeklyCount[log.name]! + 1);
+        weeklyCount[log.name] = weeklyCount[log.name]! + 1;
+        weeklyAverage[log.name]![1] = weeklyAverage[log.name]![1] + log.timeUsed;
+      } else {
+        weeklyAverage.putIfAbsent(log.name, () => [log.avgScore, log.timeUsed.toDouble()]);
+        weeklyCount.putIfAbsent(log.name, () => 1);
+      }
+    }
+    var sorted = weeklyAverage.entries.toList();
+    sorted.sort((a, b) => a.value[0].compareTo(b.value[0]));
+    sorted = sorted.sublist(0,5);
+    return sorted;
+  }
+
   Future<List<double>> getAvgHourlySentiment(DateTime date) async {
     var query = (select(sentimentLogs)..where((tbl) => tbl.hour.year.equals(date.year)
         & tbl.hour.month.equals(date.month)
@@ -77,18 +114,11 @@ class SentimentDB extends _$SentimentDB {
     )).get();
   }
 
-  static Future<void> addAppIcons(AddAppIconRequest r) async {
+  static Future<void> addAppIcon(AddAppIconRequest r) async {
     var isolate = DriftIsolate.fromConnectPort(r.iPort);
     var sdb = SentimentDB.connect(await isolate.connect());
-    await sdb.batch((batch) {
-      List<AppIconsCompanion> icons = <AppIconsCompanion>[];
-      for (var icon in r.icons.entries) {
-        var entry = AppIconsCompanion(name: Value(icon.key),
-            icon: Value(icon.value));
-        icons.add(entry);
-      }
-      batch.insertAllOnConflictUpdate(sdb.appIcons, icons);
-    });
+    var entry = AppIconsCompanion(name: Value(r.name), icon: Value(r.icon));
+    sdb.into(sdb.appIcons).insert(entry);
   }
 
   static Future<void> addSentiments(AddSentimentRequest r) async {
@@ -181,8 +211,9 @@ class AddSentimentRequest {
 }
 
 class AddAppIconRequest {
-  final HashMap<String, Uint8List> icons;
+  final String name;
+  final Uint8List icon;
   final SendPort iPort;
 
-  AddAppIconRequest(this.icons, this.iPort);
+  AddAppIconRequest(this.name, this.icon, this.iPort);
 }

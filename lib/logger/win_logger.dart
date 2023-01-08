@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:ffi';
 import 'dart:typed_data';
 
@@ -45,7 +43,7 @@ import 'package:ffi/ffi.dart';
       if (wParam == WM_LBUTTONDOWN) {
           var name = WinLogger()._getFGAppName();
           WinLogger().updateFGApp(name);
-          if (WinLogger().getAppIcon(name) == null) {
+          if (!WinLogger().hasAppIcon(name)) {
             var icon = WinLogger().findAppIcon(GetForegroundWindow());
             if (icon != null) {
               WinLogger().addAppIcon(name, icon);
@@ -91,7 +89,11 @@ import 'package:ffi/ffi.dart';
       int pid = iPtr.value;
       int op = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
       GetModuleBaseName(op, NULL, sPtr, nChar);
-      return sPtr.toDartString().substring(0,sPtr.toDartString().length-4);
+      return _formatName(sPtr.toDartString().substring(0,sPtr.toDartString().length-4));
+    }
+
+    String _formatName(String name) {
+      return name[0].toUpperCase() + name.toLowerCase().substring(1);
     }
 
     Uint8List? findAppIcon(int hWnd, {background = 0xffffff, hover = false}) {
@@ -117,7 +119,7 @@ import 'package:ffi/ffi.dart';
         ..ref.bottom = GetSystemMetrics(SM_CYICON)
         ..ref.top = 0;
       FillRect(hDC, clientRect, CreateSolidBrush(background));
-      DrawIcon(hDC, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), icon);
+      DrawIcon(hDC, 0, 0, icon);
 
       final bmpScreen = calloc<BITMAP>();
       GetObject(hBitmap, sizeOf<BITMAP>(), bmpScreen);
@@ -155,6 +157,8 @@ import 'package:ffi/ffi.dart';
       free(piconinfo);
       free(hICON);
       free(clientRect);
-      return b.takeBytes();
+      Uint8List img = b.takeBytes();
+      //log(base64Encode(img));
+      return img;
     }
   }
