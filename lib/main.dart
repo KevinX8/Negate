@@ -59,7 +59,6 @@ Future<void> main() async {
   var iPort = await rPort.first as SendPort;
   var isolate = DriftIsolate.fromConnectPort(iPort);
   var sdb = SentimentDB.connect(await isolate.connect());
-  await sdb.getRecommendations();
   getIt.registerSingleton<SentimentDB>(sdb);
   runApp(const ProviderScope(child: loggerUI));
 }
@@ -153,10 +152,7 @@ class RecommendationsPage extends StatelessWidget {
                     return Container(
                         height: 50,
                         child: ListTile(
-                          leading: Wrap(
-                              children: [
-                                Text("${index+1}.   "),
-                                FutureBuilder<Uint8List?>(
+                          leading: FutureBuilder<Uint8List?>(
                                   future: sdb.getAppIcon(logs[index].key),
                                   builder: (ctx, ico) {
                                     if (ico.hasData) {
@@ -165,8 +161,6 @@ class RecommendationsPage extends StatelessWidget {
                                     return const ImageIcon(null);
                                   },
                                 ),
-                              ]
-                          ),
                           trailing: Text(
                               "${(logs[index].value[0] * 100).toStringAsFixed(2)}%"),
                           title: Text(logs[index].key),
