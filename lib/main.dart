@@ -22,6 +22,7 @@ import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:system_tray/system_tray.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final dbProvider = StateNotifierProvider((ref) {
   return DBMonitor();
@@ -82,40 +83,40 @@ class WindowButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.deepPurple.shade600,
+        color: Colors.deepPurple.shade600,
         child: Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Expanded(child: WindowTitleBarBox(child: MoveWindow())),
-        MinimizeWindowButton(colors: buttonColors),
-        MaximizeWindowButton(colors: buttonColors),
-        CloseWindowButton(
-          colors: closeButtonColors,
-          onPressed: () {
-            showDialog<void>(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Exit Program?'),
-                  content: const Text(
-                      ('The window will be hidden, to exit the program you can use the system menu.')),
-                  actions: <Widget>[
-                    TextButton(
-                      child: const Text('OK'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        appWindow.hide();
-                      },
-                    ),
-                  ],
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Expanded(child: WindowTitleBarBox(child: MoveWindow())),
+            MinimizeWindowButton(colors: buttonColors),
+            MaximizeWindowButton(colors: buttonColors),
+            CloseWindowButton(
+              colors: closeButtonColors,
+              onPressed: () {
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Exit Program?'),
+                      content: const Text(
+                          ('The window will be hidden, to exit the program you can use the system menu.')),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('OK'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            appWindow.hide();
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
-            );
-          },
-        ),
-      ],
-    ));
+            ),
+          ],
+        ));
   }
 }
 
@@ -129,31 +130,40 @@ class RecommendationsPage extends StatelessWidget {
       appBar: AppBar(title: const Text("Weekly Recommendations")),
       body: Column(
         children: [
-          const Padding(padding: EdgeInsets.all(10),
-          child:  Text("Top 5 most Negative Apps of the last 7 days",
-              style: TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(child: FutureBuilder<List<MapEntry<String, List<double>>>>(
-              future: sdb.getRecommendations(),
-              builder: (context, s) {
-                var logs = <MapEntry<String, List<double>>>[];
-                if (s.hasData) {
-                  if (s.data!.isNotEmpty) {
-                    logs = s.data!;
-                  }
-                }
-                return ListView.separated(
-                  itemCount: logs.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    var timeUsed = Duration(minutes: logs[index].value[1].toInt());
-                    Text used = Text("Used for ${timeUsed.inMinutes} m");
-                    if (timeUsed.inHours != 0) {
-                      used = Text("Used for ${timeUsed.inHours} h ${timeUsed.inMinutes} m");
+          const Padding(
+              padding: EdgeInsets.all(10),
+              child: Text("Top 5 most Negative Apps of the last 7 days",
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          Expanded(
+              child: FutureBuilder<List<List<MapEntry<String, List<double>>>>>(
+                  future: sdb.getRecommendations(),
+                  builder: (context, s) {
+                    var negativeLogs = <MapEntry<String, List<double>>>[];
+                    var positiveLogs = <MapEntry<String, List<double>>>[];
+                    if (s.hasData) {
+                      if (s.data!.isNotEmpty) {
+                        negativeLogs = s.data![0];
+                        positiveLogs = s.data![1];
+                      }
                     }
-                    return Container(
-                        height: 50,
-                        child: ListTile(
-                          leading: FutureBuilder<Uint8List?>(
-                                  future: sdb.getAppIcon(logs[index].key),
+                    return Column(children: [
+                      Expanded(child:
+                      ListView.separated(
+                        itemCount: negativeLogs.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          var timeUsed = Duration(
+                              minutes: negativeLogs[index].value[1].toInt());
+                          Text used = Text("Used for ${timeUsed.inMinutes} m");
+                          if (timeUsed.inHours != 0) {
+                            used = Text(
+                                "Used for ${timeUsed.inHours} h ${timeUsed.inMinutes % 60} m");
+                          }
+                          return Container(
+                              height: 50,
+                              child: ListTile(
+                                leading: FutureBuilder<Uint8List?>(
+                                  future:
+                                      sdb.getAppIcon(negativeLogs[index].key),
                                   builder: (ctx, ico) {
                                     if (ico.hasData) {
                                       return Image.memory(ico.data!);
@@ -161,16 +171,56 @@ class RecommendationsPage extends StatelessWidget {
                                     return const ImageIcon(null);
                                   },
                                 ),
-                          trailing: Text(
-                              "${(logs[index].value[0] * 100).toStringAsFixed(2)}%"),
-                          title: Text(logs[index].key),
-                          subtitle: used,
-                        ));
-                  },
-                  separatorBuilder: (BuildContext context, int index) =>
-                  const Divider(),
-                );
-              })),
+                                trailing: Text(
+                                    "${(negativeLogs[index].value[0] * 100).toStringAsFixed(2)}%"),
+                                title: Text(negativeLogs[index].key),
+                                subtitle: used,
+                              ));
+                        },
+                        separatorBuilder: (BuildContext context, int index) =>
+                            const Divider(),
+                      )),
+                      const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Text(
+                                  "Top 5 most Positive Apps of the last 7 days",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold))),
+                      Expanded(child:
+                      ListView.separated(
+                        itemCount: positiveLogs.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          var timeUsed = Duration(
+                              minutes: positiveLogs[index].value[1].toInt());
+                          Text used = Text("Used for ${timeUsed.inMinutes} m");
+                          if (timeUsed.inHours != 0) {
+                            used = Text(
+                                "Used for ${timeUsed.inHours} h ${timeUsed.inMinutes % 60} m");
+                          }
+                          return Container(
+                              height: 50,
+                              child: ListTile(
+                                leading: FutureBuilder<Uint8List?>(
+                                  future:
+                                  sdb.getAppIcon(positiveLogs[index].key),
+                                  builder: (ctx, ico) {
+                                    if (ico.hasData) {
+                                      return Image.memory(ico.data!);
+                                    }
+                                    return const ImageIcon(null);
+                                  },
+                                ),
+                                trailing: Text(
+                                    "${(positiveLogs[index].value[0] * 100).toStringAsFixed(2)}%"),
+                                title: Text(positiveLogs[index].key),
+                                subtitle: used,
+                              ));
+                        },
+                        separatorBuilder: (BuildContext context, int index) =>
+                        const Divider(),
+                      )),
+                    ]);
+                  })),
         ],
       ),
     );
@@ -227,25 +277,24 @@ class ThemedHourlyUI extends StatelessWidget {
       );
     }
     return MaterialApp(
-          title: 'Negate Mental Health Tracker',
-          theme: ThemeData(
-              colorScheme: ColorScheme.fromSwatch(
-                  primarySwatch: Colors.deepPurple,
-                  primaryColorDark: Colors.deepPurpleAccent,
-                  accentColor: Colors.deepPurpleAccent,
-                  brightness: Brightness.light),
-              useMaterial3: true),
-          darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSwatch(
-                  primarySwatch: Colors.deepPurple,
-                  primaryColorDark: Colors.deepPurpleAccent,
-                  cardColor: Colors.deepPurpleAccent,
-                  accentColor: Colors.deepPurpleAccent,
-                  brightness: Brightness.dark),
-              useMaterial3: true),
-          themeMode: ThemeMode.system,
-          home: home
-        );
+        title: 'Negate Mental Health Tracker',
+        theme: ThemeData(
+            colorScheme: ColorScheme.fromSwatch(
+                primarySwatch: Colors.deepPurple,
+                primaryColorDark: Colors.deepPurpleAccent,
+                accentColor: Colors.deepPurpleAccent,
+                brightness: Brightness.light),
+            useMaterial3: true),
+        darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSwatch(
+                primarySwatch: Colors.deepPurple,
+                primaryColorDark: Colors.deepPurpleAccent,
+                cardColor: Colors.deepPurpleAccent,
+                accentColor: Colors.deepPurpleAccent,
+                brightness: Brightness.dark),
+            useMaterial3: true),
+        themeMode: ThemeMode.system,
+        home: home);
   }
 }
 
@@ -256,7 +305,8 @@ class Home extends ConsumerWidget {
   Future<void> _showDisclosure(BuildContext context) async {
     Text endText = const Text('Do you accept these terms?');
     if (Platform.isAndroid) {
-      endText = const Text('Do you accept these terms and allow use of accessibility services?');
+      endText = const Text(
+          'Do you accept these terms and allow use of accessibility services?');
     }
     return showDialog<void>(
       context: context,
@@ -269,21 +319,32 @@ class Home extends ConsumerWidget {
             child: ListBody(
               children: <Widget>[
                 const Text('This App makes use of sentences you type in apps.'),
-                const Text('Sentence text is never stored, only the sentiment score produced is.'),
-                const Text('None of this data is sent or received online, all processing'
-                    ' is done locally on device.'),
+                const Text(
+                    'Sentence text is never stored, only the sentiment score produced is.'),
+                const Text(
+                    'None of this data is sent or received online, all processing'
+                    ' is done locally on device. For more info tap the Policy button'),
                 endText
               ],
             ),
           ),
           actions: <Widget>[
-            TextButton(onPressed: () {
-              if (Platform.isAndroid) {
-                SystemNavigator.pop();
-              } else {
-                exit(0);
-              }
-            }, child: const Text('Exit')),
+            TextButton(
+                onPressed: () {
+                  if (Platform.isAndroid) {
+                    SystemNavigator.pop();
+                  } else {
+                    exit(0);
+                  }
+                },
+                child: const Text('Exit')),
+            TextButton(
+                onPressed: () {
+                  final Uri url = Uri.parse(
+                      'https://kevinx8.github.io/Negate/Privacy-Policy.md');
+                  launchUrl(url);
+                },
+                child: const Text('Policy')),
             TextButton(
               child: const Text('Accept'),
               onPressed: () {
@@ -303,8 +364,11 @@ class Home extends ConsumerWidget {
 
   Widget infoPage(BuildContext context) {
     return Scaffold(
-      appBar: AppBar( title: const Text("Info Page"),),
-      body: Center(child: Container(
+      appBar: AppBar(
+        title: const Text("Info Page"),
+      ),
+      body: Center(
+          child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 32),
         child: const Text('Welcome to Negate! This app uses sentiment analysis '
             'along with the messages you type to create a positivity profile '
@@ -316,7 +380,8 @@ class Home extends ConsumerWidget {
             'to gauge which apps to avoid using, however this is only a recommendation.'),
       )),
       persistentFooterButtons: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Start"))
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: const Text("Start"))
       ],
     );
   }
@@ -427,9 +492,7 @@ class Home extends ConsumerWidget {
   void handleMenu(String value) async {
     switch (value) {
       case 'Export':
-        if (Platform.isIOS ||
-            Platform.isAndroid ||
-            Platform.isMacOS) {
+        if (Platform.isIOS || Platform.isAndroid || Platform.isMacOS) {
           bool status = await Permission.storage.isGranted;
 
           if (!status) await Permission.storage.request();
@@ -441,9 +504,11 @@ class Home extends ConsumerWidget {
         const MimeType mimeType = MimeType.JSON;
         String path = "";
         if (Platform.isAndroid) {
-          path = await FileSaver.instance.saveAs(fileName, logData, 'json', mimeType);
+          path = await FileSaver.instance
+              .saveAs(fileName, logData, 'json', mimeType);
         } else {
-          path = await FileSaver.instance.saveFile(fileName, logData, 'json', mimeType: mimeType);
+          path = await FileSaver.instance
+              .saveFile(fileName, logData, 'json', mimeType: mimeType);
         }
         log(path);
         break;
@@ -471,9 +536,11 @@ Colors.greenAccent,
   Widget build(BuildContext context, WidgetRef ref) {
     var sdb = getIt<SentimentDB>.call();
     SharedPreferences.getInstance().then((pref) {
-      if (pref.getBool('accepted_privacy') == null || !pref.getBool('accepted_privacy')!) {
+      if (pref.getBool('accepted_privacy') == null ||
+          !pref.getBool('accepted_privacy')!) {
         _showDisclosure(context);
-        Navigator.push(context, MaterialPageRoute(builder: (context) => infoPage(context)));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => infoPage(context)));
       } else {
         if (Platform.isAndroid) {
           AndroidLogger().startAccessibility();
@@ -484,20 +551,36 @@ Colors.greenAccent,
       appBar: AppBar(
         title: const Text('Hourly Dashboard'),
         actions: [
-          IconButton(onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => infoPage(context)));
-          }, icon: const Icon(Icons.info_outline)),
-          IconButton(onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const RecommendationsPage()));
-          }, icon: const Icon(Icons.analytics)),
-          IconButton(onPressed: () => {}, icon: const Icon(Icons.pie_chart)),
+          IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => infoPage(context)));
+              },
+              icon: const Icon(Icons.info_outline)),
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const RecommendationsPage()));
+              },
+              icon: const Icon(Icons.analytics)),
+          IconButton(
+              onPressed: () {
+                var snackBar =
+                    const SnackBar(content: Text('Not Implemented Yet!'));
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+              },
+              icon: const Icon(Icons.pie_chart)),
           PopupMenuButton<String>(
-            onSelected: handleMenu,
+              onSelected: handleMenu,
               itemBuilder: (context) {
-            return {'Export', 'Settings', 'Stop and Exit'}.map((String choice) {
-              return PopupMenuItem<String>(value: choice, child: Text(choice));
-            }).toList();
-          }),
+                return {'Export', 'Settings', 'Stop and Exit'}
+                    .map((String choice) {
+                  return PopupMenuItem<String>(
+                      value: choice, child: Text(choice));
+                }).toList();
+              }),
         ],
       ),
       body: Column(
@@ -540,10 +623,9 @@ Colors.greenAccent,
             ),
             const Expanded(
                 child: Text("Average Positivity per Hour",
-                  style: TextStyle(fontWeight: FontWeight.bold)
-                )),
+                    style: TextStyle(fontWeight: FontWeight.bold))),
             Expanded(
-              flex: 9,
+                flex: 9,
                 child: FutureBuilder<List<BarChartGroupData>>(
                     future: getHourBars(),
                     builder: (context, averages) {
@@ -582,11 +664,12 @@ Colors.greenAccent,
                         return const CircularProgressIndicator();
                       }
                     })),
-            Expanded(child: Text('Positivity scores for ${DateFormat.j().format(_selectedDate)}',
-              style: const TextStyle(fontWeight: FontWeight.bold)
-            )),
             Expanded(
-              flex: 9,
+                child: Text(
+                    'Positivity scores for ${DateFormat.j().format(_selectedDate)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold))),
+            Expanded(
+                flex: 9,
                 child: FutureBuilder<List<SentimentLog>>(
                     future: sdb.getDaySentiment(_selectedDate),
                     builder: (context, s) {
@@ -614,7 +697,8 @@ Colors.greenAccent,
                                 trailing: Text(
                                     "${(logs[index].avgScore * 100).toStringAsFixed(2)}%"),
                                 title: Text(logs[index].name),
-                                subtitle: Text("Used for ${logs[index].timeUsed} m"),
+                                subtitle:
+                                    Text("Used for ${logs[index].timeUsed} m"),
                               ));
                         },
                         separatorBuilder: (BuildContext context, int index) =>

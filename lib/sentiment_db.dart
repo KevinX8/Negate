@@ -64,7 +64,7 @@ class SentimentDB extends _$SentimentDB {
     return jsonEncode(res);
   }
 
-  Future<List<MapEntry<String, List<double>>>> getRecommendations() async {
+  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations() async {
     var query = select(sentimentLogs)..where((tbl) =>
         tbl.hour.isBiggerOrEqualValue(DateTime.now().subtract(const Duration(days: 7))));
     Map<String, List<double>> weeklyAverage = <String, List<double>>{};
@@ -82,8 +82,9 @@ class SentimentDB extends _$SentimentDB {
     }
     var sorted = weeklyAverage.entries.toList();
     sorted.sort((a, b) => a.value[0].compareTo(b.value[0]));
-    sorted = sorted.sublist(0,5);
-    return sorted;
+    var negative = sorted.sublist(0,5);
+    var positive = sorted.reversed.toList().sublist(0, 5);
+    return [negative, positive];
   }
 
   Future<List<double>> getAvgHourlySentiment(DateTime date) async {

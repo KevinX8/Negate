@@ -133,7 +133,7 @@ class SentenceLogger {
 
   void updateFGApp(String name) {
     DateTime now = DateTime.now();
-    if (blacklist.hasMatch(name)) {
+    if (blacklist.hasMatch(name.toLowerCase())) {
       return;
     }
     if (_appMap.containsKey(name)) {
@@ -158,7 +158,7 @@ class SentenceLogger {
   }
 
   bool hasAppIcon(String name) {
-    if (blacklist.hasMatch(name)) return true;
+    if (blacklist.hasMatch(name.toLowerCase())) return true;
     return _appIcons.contains(name);
   }
 
