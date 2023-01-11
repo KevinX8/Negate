@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
@@ -17,24 +16,16 @@ import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart' hide MenuItem;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:system_tray/system_tray.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
-final dbProvider = StateNotifierProvider((ref) {
-  return DBMonitor();
-});
-
-final getIt = GetIt.instance;
-
-class DBMonitor extends StateNotifier<List<SentimentLog>> {
-  DBMonitor() : super(<SentimentLog>[]);
-
-  void set(List<SentimentLog> logs) => state = logs;
-}
+import 'package:negate/ui/globals.dart';
+import 'package:negate/ui/recommendations.dart';
+import 'package:negate/ui/window_decorations.dart';
+import 'package:negate/ui/common_ui.dart';
 
 Future<void> main() async {
   const loggerUI = ThemedHourlyUI();
@@ -48,7 +39,7 @@ Future<void> main() async {
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
 
-  if (Platform.isAndroid) {
+  if (Platform.isAndroid || Platform.isIOS) {
     LoggerFactory.startLoggerFactory(
         TfliteRequest(rPort.sendPort, dbString, tfp));
   } else {
@@ -62,169 +53,6 @@ Future<void> main() async {
   var sdb = SentimentDB.connect(await isolate.connect());
   getIt.registerSingleton<SentimentDB>(sdb);
   runApp(const ProviderScope(child: loggerUI));
-}
-
-class WindowButtons extends StatelessWidget {
-  WindowButtons({Key? key}) : super(key: key);
-
-  final buttonColors = WindowButtonColors(
-      iconNormal: Colors.white,
-      mouseOver: Colors.deepPurple[200],
-      mouseDown: Colors.deepPurple[800],
-      iconMouseOver: Colors.black,
-      iconMouseDown: Colors.deepPurple[100]);
-
-  final closeButtonColors = WindowButtonColors(
-      mouseOver: const Color(0xFFD32F2F),
-      mouseDown: const Color(0xFFB71C1C),
-      iconNormal: Colors.white,
-      iconMouseOver: Colors.white);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        color: Colors.deepPurple.shade600,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Expanded(child: WindowTitleBarBox(child: MoveWindow())),
-            MinimizeWindowButton(colors: buttonColors),
-            MaximizeWindowButton(colors: buttonColors),
-            CloseWindowButton(
-              colors: closeButtonColors,
-              onPressed: () {
-                showDialog<void>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('Exit Program?'),
-                      content: const Text(
-                          ('The window will be hidden, to exit the program you can use the system menu.')),
-                      actions: <Widget>[
-                        TextButton(
-                          child: const Text('OK'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            appWindow.hide();
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ));
-  }
-}
-
-class RecommendationsPage extends StatelessWidget {
-  const RecommendationsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    var sdb = getIt<SentimentDB>.call();
-    return Scaffold(
-      appBar: AppBar(title: const Text("Weekly Recommendations")),
-      body: Column(
-        children: [
-          const Padding(
-              padding: EdgeInsets.all(10),
-              child: Text("Top 5 most Negative Apps of the last 7 days",
-                  style: TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(
-              child: FutureBuilder<List<List<MapEntry<String, List<double>>>>>(
-                  future: sdb.getRecommendations(),
-                  builder: (context, s) {
-                    var negativeLogs = <MapEntry<String, List<double>>>[];
-                    var positiveLogs = <MapEntry<String, List<double>>>[];
-                    if (s.hasData) {
-                      if (s.data!.isNotEmpty) {
-                        negativeLogs = s.data![0];
-                        positiveLogs = s.data![1];
-                      }
-                    }
-                    return Column(children: [
-                      Expanded(child:
-                      ListView.separated(
-                        itemCount: negativeLogs.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          var timeUsed = Duration(
-                              minutes: negativeLogs[index].value[1].toInt());
-                          Text used = Text("Used for ${timeUsed.inMinutes} m");
-                          if (timeUsed.inHours != 0) {
-                            used = Text(
-                                "Used for ${timeUsed.inHours} h ${timeUsed.inMinutes % 60} m");
-                          }
-                          return Container(
-                              height: 50,
-                              child: ListTile(
-                                leading: FutureBuilder<Uint8List?>(
-                                  future:
-                                      sdb.getAppIcon(negativeLogs[index].key),
-                                  builder: (ctx, ico) {
-                                    if (ico.hasData) {
-                                      return Image.memory(ico.data!);
-                                    }
-                                    return const ImageIcon(null);
-                                  },
-                                ),
-                                trailing: Text(
-                                    "${(negativeLogs[index].value[0] * 100).toStringAsFixed(2)}%"),
-                                title: Text(negativeLogs[index].key),
-                                subtitle: used,
-                              ));
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const Divider(),
-                      )),
-                      const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Text(
-                                  "Top 5 most Positive Apps of the last 7 days",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(child:
-                      ListView.separated(
-                        itemCount: positiveLogs.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          var timeUsed = Duration(
-                              minutes: positiveLogs[index].value[1].toInt());
-                          Text used = Text("Used for ${timeUsed.inMinutes} m");
-                          if (timeUsed.inHours != 0) {
-                            used = Text(
-                                "Used for ${timeUsed.inHours} h ${timeUsed.inMinutes % 60} m");
-                          }
-                          return Container(
-                              height: 50,
-                              child: ListTile(
-                                leading: FutureBuilder<Uint8List?>(
-                                  future:
-                                  sdb.getAppIcon(positiveLogs[index].key),
-                                  builder: (ctx, ico) {
-                                    if (ico.hasData) {
-                                      return Image.memory(ico.data!);
-                                    }
-                                    return const ImageIcon(null);
-                                  },
-                                ),
-                                trailing: Text(
-                                    "${(positiveLogs[index].value[0] * 100).toStringAsFixed(2)}%"),
-                                title: Text(positiveLogs[index].key),
-                                subtitle: used,
-                              ));
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                        const Divider(),
-                      )),
-                    ]);
-                  })),
-        ],
-      ),
-    );
-  }
 }
 
 class ThemedHourlyUI extends StatelessWidget {
@@ -267,7 +95,7 @@ class ThemedHourlyUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget home = Home();
+    Widget home = HourlyDashboard();
     if (!Platform.isAndroid) {
       home = Column(
         children: [
@@ -276,273 +104,59 @@ class ThemedHourlyUI extends StatelessWidget {
         ],
       );
     }
-    return MaterialApp(
-        title: 'Negate Mental Health Tracker',
-        theme: ThemeData(
-            colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: Colors.deepPurple,
-                primaryColorDark: Colors.deepPurpleAccent,
-                accentColor: Colors.deepPurpleAccent,
-                brightness: Brightness.light),
-            useMaterial3: true),
-        darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: Colors.deepPurple,
-                primaryColorDark: Colors.deepPurpleAccent,
-                cardColor: Colors.deepPurpleAccent,
-                accentColor: Colors.deepPurpleAccent,
-                brightness: Brightness.dark),
-            useMaterial3: true),
-        themeMode: ThemeMode.system,
-        home: home);
+
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme light;
+        ColorScheme dark;
+        if (lightDynamic != null && darkDynamic != null && !Platform.isWindows) {
+          light = lightDynamic;
+          dark = darkDynamic;
+        } else {
+          light = ColorScheme.fromSwatch(
+              primarySwatch: Colors.deepPurple,
+              primaryColorDark: Colors.deepPurpleAccent,
+              accentColor: Colors.deepPurpleAccent,
+              brightness: Brightness.light);
+          dark = ColorScheme.fromSwatch(
+              primarySwatch: Colors.deepPurple,
+              primaryColorDark: Colors.deepPurpleAccent,
+              cardColor: Colors.deepPurpleAccent,
+              accentColor: Colors.deepPurpleAccent,
+              brightness: Brightness.dark);
+        }
+        return MaterialApp(
+            title: 'Negate Mental Health Tracker',
+            theme: ThemeData(
+                colorScheme: light,
+              useMaterial3: true),
+            darkTheme: ThemeData(
+                colorScheme: dark,
+                useMaterial3: true),
+            themeMode: ThemeMode.system,
+            home: home);
+    });
   }
 }
 
-class Home extends ConsumerWidget {
-  Home({super.key});
+class HourlyDashboard extends ConsumerWidget {
+  HourlyDashboard({super.key});
   DateTime _selectedDate = DateTime.now();
-
-  Future<void> _showDisclosure(BuildContext context) async {
-    Text endText = const Text('Do you accept these terms?');
-    if (Platform.isAndroid) {
-      endText = const Text(
-          'Do you accept these terms and allow use of accessibility services?');
-    }
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          scrollable: true,
-          title: const Text('Privacy Disclosure'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                const Text('This App makes use of sentences you type in apps.'),
-                const Text(
-                    'Sentence text is never stored, only the sentiment score produced is.'),
-                const Text(
-                    'None of this data is sent or received online, all processing'
-                    ' is done locally on device. For more info tap the Policy button'),
-                endText
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-                onPressed: () {
-                  if (Platform.isAndroid) {
-                    SystemNavigator.pop();
-                  } else {
-                    exit(0);
-                  }
-                },
-                child: const Text('Exit')),
-            TextButton(
-                onPressed: () {
-                  final Uri url = Uri.parse(
-                      'https://kevinx8.github.io/Negate/Privacy-Policy.md');
-                  launchUrl(url);
-                },
-                child: const Text('Policy')),
-            TextButton(
-              child: const Text('Accept'),
-              onPressed: () {
-                final prefs = SharedPreferences.getInstance();
-                prefs.then((pref) => pref.setBool('accepted_privacy', true));
-                Navigator.of(context).pop();
-                if (Platform.isAndroid) {
-                  AndroidLogger().startAccessibility();
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget infoPage(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Info Page"),
-      ),
-      body: Center(
-          child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: const Text('Welcome to Negate! This app uses sentiment analysis '
-            'along with the messages you type to create a positivity profile '
-            'for all the apps you use in your day to day life.\nThe hourly dashboard '
-            'shows an hour by hour breakdown of each apps positivity scores, along '
-            'with an overall average for that hour shown in the bar chart.\n'
-            'The Recommendations section shows you the top 5 apps which have had the most '
-            'negative effect on your mood in the past week, you can use this information'
-            'to gauge which apps to avoid using, however this is only a recommendation.'),
-      )),
-      persistentFooterButtons: [
-        TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text("Start"))
-      ],
-    );
-  }
-
-  Widget bottomTitles(double value, TitleMeta meta) {
-    const style = TextStyle(fontWeight: FontWeight.normal, fontSize: 14);
-    String text;
-    if (value == 0) {
-      text = '12 AM';
-    } else if (value == 6) {
-      text = '6 AM';
-    } else if (value == 12) {
-      text = '12 PM';
-    } else if (value == 18) {
-      text = '6 PM';
-    } else if (value == 23) {
-      text = '11 PM';
-    } else {
-      text = '';
-    }
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      child: Text(text, style: style),
-    );
-  }
-
-  BarTouchData barTouchData(WidgetRef ref) => BarTouchData(
-        enabled: true,
-        mouseCursorResolver: (barData, res) {
-          if (res?.spot != null) {
-            return SystemMouseCursors.click;
-          }
-          return SystemMouseCursors.basic;
-        },
-        handleBuiltInTouches: true,
-        touchCallback: (event, res) {
-          if (event.runtimeType == FlTapDownEvent) {
-            if (res?.spot != null) {
-              var hour = res!.spot!.touchedBarGroup.x;
-              _selectedDate = DateTime(_selectedDate.year, _selectedDate.month,
-                  _selectedDate.day, hour);
-              var sdb = getIt<SentimentDB>.call();
-              var ret = sdb.getDaySentiment(_selectedDate);
-              ret.then((slog) {
-                ref.read(dbProvider.notifier).set(slog);
-              }, onError: (err, stk) => log(err));
-            }
-          }
-        },
-        touchTooltipData: BarTouchTooltipData(
-          tooltipBgColor: Colors.transparent,
-          tooltipPadding: EdgeInsets.zero,
-          tooltipMargin: 8,
-          getTooltipItem: (
-            BarChartGroupData group,
-            int groupIndex,
-            BarChartRodData rod,
-            int rodIndex,
-          ) {
-            return BarTooltipItem(
-              '${rod.toY.round()}%',
-              const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            );
-          },
-        ),
-      );
-
-  Future<List<BarChartGroupData>> getHourBars() async {
-    List<BarChartGroupData> bars = [];
-    var sdb = getIt<SentimentDB>.call();
-    var res = await sdb.getAvgHourlySentiment(_selectedDate);
-    for (int i = 0; i < 24; i++) {
-      List<int>? show;
-      if (_selectedDate.hour == i) {
-        show = [0];
-      }
-      bars.add(BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-                toY: (res[i] * 100).roundToDouble(),
-                width: 10,
-                color: getBarColour(res[i]),
-                borderRadius: const BorderRadius.all(Radius.zero))
-          ],
-          showingTooltipIndicators: show));
-    }
-    return bars;
-  }
-
-  Color getBarColour(double val) {
-    int percent = (val * 100).round();
-    if (percent >= 75) {
-      return Colors.green[900]!;
-    } else if (percent >= 65) {
-      return Colors.green;
-    } else if (percent >= 45) {
-      return Colors.greenAccent;
-    } else if (percent >= 35) {
-      return Colors.yellow;
-    } else {
-      return Colors.red;
-    }
-  }
-
-  void handleMenu(String value) async {
-    switch (value) {
-      case 'Export':
-        if (Platform.isIOS || Platform.isAndroid || Platform.isMacOS) {
-          bool status = await Permission.storage.isGranted;
-
-          if (!status) await Permission.storage.request();
-        }
-        const String fileName = 'sentiment_logs';
-        var sdb = getIt<SentimentDB>.call();
-        var logs = await sdb.jsonLogs();
-        var logData = Uint8List.fromList(logs.codeUnits);
-        const MimeType mimeType = MimeType.JSON;
-        String path = "";
-        if (Platform.isAndroid) {
-          path = await FileSaver.instance
-              .saveAs(fileName, logData, 'json', mimeType);
-        } else {
-          path = await FileSaver.instance
-              .saveFile(fileName, logData, 'json', mimeType: mimeType);
-        }
-        log(path);
-        break;
-      case 'Settings':
-        break;
-      case 'Stop and Exit':
-        exit(0);
-    }
-  }
-
-  /*
-  LinearGradient get _barsGradient => LinearGradient(
-    colors: [
-      Colors.red,
-      Colors.yellow,
-Colors.greenAccent,
-      Colors.green,
-      Colors.green[900]!,
-    ],
-    begin: a.Alignment.bottomCenter,
-    end: a.Alignment.topCenter,
-  );*/
+  bool _requested = false;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var sdb = getIt<SentimentDB>.call();
     SharedPreferences.getInstance().then((pref) {
-      if (pref.getBool('accepted_privacy') == null ||
-          !pref.getBool('accepted_privacy')!) {
-        _showDisclosure(context);
+      if ((pref.getBool('accepted_privacy') == null ||
+          !pref.getBool('accepted_privacy')!) && !_requested) {
+        _requested = true;
+        CommonUI.showDisclosure(context);
         Navigator.push(context,
-            MaterialPageRoute(builder: (context) => infoPage(context)));
+            MaterialPageRoute(builder: (context) => CommonUI.infoPage(context)));
       } else {
-        if (Platform.isAndroid) {
+        if (Platform.isAndroid && !_requested) {
+          _requested = true;
           AndroidLogger().startAccessibility();
         }
       }
@@ -554,7 +168,7 @@ Colors.greenAccent,
           IconButton(
               onPressed: () {
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => infoPage(context)));
+                    MaterialPageRoute(builder: (context) => CommonUI.infoPage(context)));
               },
               icon: const Icon(Icons.info_outline)),
           IconButton(
@@ -598,7 +212,7 @@ Colors.greenAccent,
                       ref.read(dbProvider.notifier).set(slog);
                     }, onError: (err, stk) => log(err));
                   },
-                  child: const Text('<'),
+                  child: Icon(Icons.chevron_left_rounded, color: Theme.of(context).primaryColor),
                 ),
                 Text(DateFormat.yMMMd().format(_selectedDate)),
                 ElevatedButton(
@@ -617,7 +231,7 @@ Colors.greenAccent,
                       ref.read(dbProvider.notifier).set(slog);
                     }, onError: (err, stk) => log(err));
                   },
-                  child: const Text('>'),
+                  child: Icon(Icons.chevron_right_rounded, color: Theme.of(context).primaryColor),
                 ),
               ],
             ),
@@ -723,5 +337,139 @@ Colors.greenAccent,
         ),
       ],
     );
+  }
+
+
+  Widget bottomTitles(double value, TitleMeta meta) {
+    const style = TextStyle(fontWeight: FontWeight.normal, fontSize: 14);
+    String text;
+    if (value == 0) {
+      text = '12 AM';
+    } else if (value == 6) {
+      text = '6 AM';
+    } else if (value == 12) {
+      text = '12 PM';
+    } else if (value == 18) {
+      text = '6 PM';
+    } else if (value == 23) {
+      text = '11 PM';
+    } else {
+      text = '';
+    }
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      child: Text(text, style: style),
+    );
+  }
+
+  BarTouchData barTouchData(WidgetRef ref) => BarTouchData(
+    enabled: true,
+    mouseCursorResolver: (barData, res) {
+      if (res?.spot != null) {
+        return SystemMouseCursors.click;
+      }
+      return SystemMouseCursors.basic;
+    },
+    handleBuiltInTouches: true,
+    touchCallback: (event, res) {
+      if (event.runtimeType == FlTapDownEvent) {
+        if (res?.spot != null) {
+          var hour = res!.spot!.touchedBarGroup.x;
+          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month,
+              _selectedDate.day, hour);
+          var sdb = getIt<SentimentDB>.call();
+          var ret = sdb.getDaySentiment(_selectedDate);
+          ret.then((slog) {
+            ref.read(dbProvider.notifier).set(slog);
+          }, onError: (err, stk) => log(err));
+        }
+      }
+    },
+    touchTooltipData: BarTouchTooltipData(
+      tooltipBgColor: Colors.transparent,
+      tooltipPadding: EdgeInsets.zero,
+      tooltipMargin: 8,
+      getTooltipItem: (
+          BarChartGroupData group,
+          int groupIndex,
+          BarChartRodData rod,
+          int rodIndex,
+          ) {
+        return BarTooltipItem(
+          '${rod.toY.round()}%',
+          const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        );
+      },
+    ),
+  );
+
+  Future<List<BarChartGroupData>> getHourBars() async {
+    List<BarChartGroupData> bars = [];
+    var sdb = getIt<SentimentDB>.call();
+    var res = await sdb.getAvgHourlySentiment(_selectedDate);
+    for (int i = 0; i < 24; i++) {
+      List<int>? show;
+      if (_selectedDate.hour == i) {
+        show = [0];
+      }
+      bars.add(BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+                toY: (res[i] * 100).roundToDouble(),
+                width: 10,
+                color: getBarColour(res[i]),
+                borderRadius: const BorderRadius.all(Radius.zero))
+          ],
+          showingTooltipIndicators: show));
+    }
+    return bars;
+  }
+
+  Color getBarColour(double val) {
+    int percent = (val * 100).round();
+    if (percent >= 75) {
+      return Colors.green[900]!;
+    } else if (percent >= 65) {
+      return Colors.green;
+    } else if (percent >= 45) {
+      return Colors.greenAccent;
+    } else if (percent >= 35) {
+      return Colors.yellow;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  void handleMenu(String value) async {
+    switch (value) {
+      case 'Export':
+        if (Platform.isIOS || Platform.isAndroid || Platform.isMacOS) {
+          bool status = await Permission.storage.isGranted;
+
+          if (!status) await Permission.storage.request();
+        }
+        const String fileName = 'sentiment_logs';
+        var sdb = getIt<SentimentDB>.call();
+        var logs = await sdb.jsonLogs();
+        var logData = Uint8List.fromList(logs.codeUnits);
+        const MimeType mimeType = MimeType.JSON;
+        String path = "";
+        if (Platform.isAndroid) {
+          path = await FileSaver.instance
+              .saveAs(fileName, logData, 'json', mimeType);
+        } else {
+          path = await FileSaver.instance
+              .saveFile(fileName, logData, 'json', mimeType: mimeType);
+        }
+        log(path);
+        break;
+      case 'Settings':
+        break;
+      case 'Stop and Exit':
+        exit(0);
+    }
   }
 }

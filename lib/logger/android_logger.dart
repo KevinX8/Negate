@@ -11,8 +11,11 @@ import 'package:permission_handler/permission_handler.dart';
 
 class AndroidLogger extends SentenceLogger {
   static final AndroidLogger _instance = AndroidLogger.init();
-  static final RegExp blacklist = RegExp(".*system.*|.*keyboard.*|.*input.*|"
+  @override
+  final RegExp blacklist = RegExp(".*system.*|.*keyboard.*|.*input.*|"
       ".*honeyboard.*|.*swiftkey.*|.*lawnchair.*|.*launcher.*|.*settings.*");
+
+
 
   factory AndroidLogger() {
     return _instance;
@@ -68,7 +71,7 @@ class AndroidLogger extends SentenceLogger {
   }
 
   static void _accessibilityListener(AccessibilityEvent event) {
-    if (blacklist.hasMatch(event.packageName!)){
+    if (AndroidLogger().blacklist.hasMatch(event.packageName!)){
       return;
     }
     if (event.eventType == EventType.typeWindowStateChanged) {

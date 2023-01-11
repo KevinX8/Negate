@@ -9,10 +9,11 @@ import 'package:ffi/ffi.dart';
 
   class WinLogger extends SentenceLogger {
     static final WinLogger _instance = WinLogger.init();
-    static final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*|.*settings.*|.*explorer.*|.*host$|"
-    r".*lockapp.*|.*widgets.*|.*setup.*|.*uninstall.*|.*taskmgr.*|.*openwith.*|.*msiexec.*");
     static int _keyHook = 0;
     static int _mouseHook = 0;
+    @override
+    final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*|.*settings.*|.*explorer.*|.*host$|"
+    r".*lockapp.*|.*widgets.*|.*setup.*|.*uninstall.*|.*taskmgr.*|.*openwith.*|.*msiexec.*");
 
     factory WinLogger() {
       return _instance;

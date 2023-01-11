@@ -81,6 +81,8 @@ class SentimentDB extends _$SentimentDB {
       }
     }
     var sorted = weeklyAverage.entries.toList();
+    //Ignore apps used for less than 10 minutes
+    sorted.removeWhere((element) => element.value[1] < 10);
     sorted.sort((a, b) => a.value[0].compareTo(b.value[0]));
     var negative = sorted.sublist(0,5);
     var positive = sorted.reversed.toList().sublist(0, 5);

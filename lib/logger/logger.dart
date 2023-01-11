@@ -27,7 +27,7 @@ class SentenceLogger {
   static late DriftIsolate _iso;
   static late TfParams _tfp;
   static const int _updateFreq = 1; //update db every 5 minutes
-  static final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
+  final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
   String _lastUsedApp = "";
   bool _dbUpdated = false;
 
