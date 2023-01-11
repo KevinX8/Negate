@@ -109,7 +109,7 @@ class ThemedHourlyUI extends StatelessWidget {
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         ColorScheme light;
         ColorScheme dark;
-        if (lightDynamic != null && darkDynamic != null && !Platform.isWindows) {
+        if (lightDynamic != null && darkDynamic != null) {
           light = lightDynamic;
           dark = darkDynamic;
         } else {
@@ -129,9 +129,11 @@ class ThemedHourlyUI extends StatelessWidget {
             title: 'Negate Mental Health Tracker',
             theme: ThemeData(
                 colorScheme: light,
+              scaffoldBackgroundColor: light.background,
               useMaterial3: true),
             darkTheme: ThemeData(
                 colorScheme: dark,
+                scaffoldBackgroundColor: dark.background,
                 useMaterial3: true),
             themeMode: ThemeMode.system,
             home: home);
@@ -204,6 +206,7 @@ class HourlyDashboard extends ConsumerWidget {
               alignment: MainAxisAlignment.center,
               children: <Widget>[
                 ElevatedButton(
+                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
                   onPressed: () {
                     _selectedDate =
                         _selectedDate.subtract(const Duration(days: 1));
@@ -216,6 +219,7 @@ class HourlyDashboard extends ConsumerWidget {
                 ),
                 Text(DateFormat.yMMMd().format(_selectedDate)),
                 ElevatedButton(
+                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
                   onPressed: () {
                     var now = DateTime.now();
                     var midnight = DateTime(now.year, now.month, now.day);

@@ -5,13 +5,6 @@ import 'package:flutter/material.dart';
 class WindowButtons extends StatelessWidget {
   WindowButtons({Key? key}) : super(key: key);
 
-  final buttonColors = WindowButtonColors(
-      iconNormal: Colors.white,
-      mouseOver: Colors.deepPurple[200],
-      mouseDown: Colors.deepPurple[800],
-      iconMouseOver: Colors.black,
-      iconMouseDown: Colors.deepPurple[100]);
-
   final closeButtonColors = WindowButtonColors(
       mouseOver: const Color(0xFFD32F2F),
       mouseDown: const Color(0xFFB71C1C),
@@ -20,8 +13,14 @@ class WindowButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var buttonColors = WindowButtonColors(
+        iconNormal: Colors.white,
+        mouseOver: Theme.of(context).colorScheme.primary,
+        mouseDown: Theme.of(context).scaffoldBackgroundColor,
+        iconMouseOver: Colors.black,
+        iconMouseDown: Theme.of(context).colorScheme.primary);
     return Container(
-        color: Colors.deepPurple.shade600,
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
