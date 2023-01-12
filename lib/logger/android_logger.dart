@@ -31,12 +31,13 @@ class AndroidLogger extends SentenceLogger {
         channelId: 'sentence_logger',
         channelName: 'Sentiment Tracker',
         channelDescription: 'Analyzing sentence sentiment',
-        channelImportance: NotificationChannelImportance.MIN,
-        priority: NotificationPriority.MIN,
+        channelImportance: NotificationChannelImportance.NONE,
+        priority: NotificationPriority.LOW,
+        visibility: NotificationVisibility.VISIBILITY_SECRET,
         iconData: const NotificationIconData(
-          resType: ResourceType.mipmap,
+          resType: ResourceType.drawable,
           resPrefix: ResourcePrefix.ic,
-          name: 'launcher',
+          name: 'brain_icon',
         ),
         buttons: [
           //const NotificationButton(id: 'stopButton', text: 'Stop'),

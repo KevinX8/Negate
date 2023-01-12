@@ -153,7 +153,7 @@ class HourlyDashboard extends ConsumerWidget {
       if ((pref.getBool('accepted_privacy') == null ||
           !pref.getBool('accepted_privacy')!) && !_requested) {
         _requested = true;
-        CommonUI.showDisclosure(context);
+        CommonUI.showDisclosure(context, pref);
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => CommonUI.infoPage(context)));
       } else {

@@ -23,8 +23,8 @@ class CommonUI {
                 'shows an hour by hour breakdown of each apps positivity scores, along '
                 'with an overall average for that hour shown in the bar chart.\n'
                 'The Recommendations section shows you the top 5 apps which have had the most '
-                'negative effect on your mood in the past week, you can use this information'
-                'to gauge which apps to avoid using, however this is only a recommendation.'),
+                'negative effect on your mood in the past week and the top 5 with the most positive impact, you can use this information'
+                'to gauge which apps to avoid using and which ones help improve your mood, however this is only a recommendation.'),
           )),
       persistentFooterButtons: [
         TextButton(
@@ -33,11 +33,15 @@ class CommonUI {
     );
   }
 
-  static Future<void> showDisclosure(BuildContext context) async {
+  static Future<void> showDisclosure(BuildContext context, SharedPreferences pref) async {
     Text endText = const Text('Do you accept these terms?');
+    Text startText = const Text('This app tracks the text of messages '
+        'and what app is currently in use.');
     if (Platform.isAndroid) {
       endText = const Text(
-          'Do you accept these terms and allow use of accessibility services?');
+          'Do you accept these terms and allow use of the Accessibility API?');
+      startText = const Text('This app makes use of the Accessibility API, '
+          'which allows it to track the text of messages and what app is currently in use.');
     }
     return showDialog<void>(
       context: context,
@@ -49,9 +53,12 @@ class CommonUI {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                const Text('This App makes use of sentences you type in apps.'),
+                startText,
                 const Text(
-                    'Sentence text is never stored, only the sentiment score produced is.'),
+                        'The text is processed as specified in the privacy policy and used to generate '
+                        'sentiment scores for the apps currently in use. The details of the current app '
+                        'in use are required for the generation of a sentiment profile for each app as '
+                        'not every app that influences your mood contains messaging features.'),
                 const Text(
                     'None of this data is sent or received online, all processing'
                         ' is done locally on device. For more info tap the Policy button'),
@@ -79,8 +86,7 @@ class CommonUI {
             TextButton(
               child: const Text('Accept'),
               onPressed: () {
-                final prefs = SharedPreferences.getInstance();
-                prefs.then((pref) => pref.setBool('accepted_privacy', true));
+                pref.setBool('accepted_privacy', true);
                 Navigator.of(context).pop();
                 if (Platform.isAndroid) {
                   AndroidLogger().startAccessibility();
