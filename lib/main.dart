@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'package:file_saver/file_saver.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/intl.dart';
 import 'package:negate/logger/android_logger.dart';
 import 'package:negate/logger/logger_factory.dart';
@@ -14,6 +15,7 @@ import 'package:negate/sentiment_db.dart';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart' hide MenuItem;
+import 'package:negate/ui/daily_dashboard.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -103,6 +105,8 @@ class ThemedHourlyUI extends StatelessWidget {
           Expanded(child: home),
         ],
       );
+    } else {
+      home = WithForegroundTask(child: home);
     }
 
     return DynamicColorBuilder(
@@ -143,7 +147,6 @@ class ThemedHourlyUI extends StatelessWidget {
 
 class HourlyDashboard extends ConsumerWidget {
   HourlyDashboard({super.key});
-  DateTime _selectedDate = DateTime.now();
   bool _requested = false;
 
   @override
@@ -183,9 +186,14 @@ class HourlyDashboard extends ConsumerWidget {
               icon: const Icon(Icons.analytics)),
           IconButton(
               onPressed: () {
-                var snackBar =
-                    const SnackBar(content: Text('Not Implemented Yet!'));
-                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) {
+                          return StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
+                            return DailyDashboard.dashboard(context, sdb, ref, setState);
+                          });
+                          }));
               },
               icon: const Icon(Icons.pie_chart)),
           PopupMenuButton<String>(
@@ -202,43 +210,7 @@ class HourlyDashboard extends ConsumerWidget {
       body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            ButtonBar(
-              alignment: MainAxisAlignment.center,
-              children: <Widget>[
-                ElevatedButton(
-                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
-                  onPressed: () {
-                    _selectedDate =
-                        _selectedDate.subtract(const Duration(days: 1));
-                    var res = sdb.getDaySentiment(_selectedDate);
-                    res.then((slog) {
-                      ref.read(dbProvider.notifier).set(slog);
-                    }, onError: (err, stk) => log(err));
-                  },
-                  child: Icon(Icons.chevron_left_rounded, color: Theme.of(context).primaryColor),
-                ),
-                Text(DateFormat.yMMMd().format(_selectedDate)),
-                ElevatedButton(
-                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
-                  onPressed: () {
-                    var now = DateTime.now();
-                    var midnight = DateTime(now.year, now.month, now.day);
-                    if (_selectedDate
-                            .add(const Duration(days: 1))
-                            .difference(midnight) >
-                        const Duration(days: 1)) {
-                      return;
-                    }
-                    _selectedDate = _selectedDate.add(const Duration(days: 1));
-                    var res = sdb.getDaySentiment(_selectedDate);
-                    res.then((slog) {
-                      ref.read(dbProvider.notifier).set(slog);
-                    }, onError: (err, stk) => log(err));
-                  },
-                  child: Icon(Icons.chevron_right_rounded, color: Theme.of(context).primaryColor),
-                ),
-              ],
-            ),
+            CommonUI.dateChanger(context, sdb, ref),
             const Expanded(
                 child: Text("Average Positivity per Hour",
                     style: TextStyle(fontWeight: FontWeight.bold))),
@@ -284,12 +256,12 @@ class HourlyDashboard extends ConsumerWidget {
                     })),
             Expanded(
                 child: Text(
-                    'Positivity scores for ${DateFormat.j().format(_selectedDate)}',
+                    'Positivity scores for ${DateFormat.j().format(selectedDate)}',
                     style: const TextStyle(fontWeight: FontWeight.bold))),
             Expanded(
                 flex: 9,
                 child: FutureBuilder<List<SentimentLog>>(
-                    future: sdb.getDaySentiment(_selectedDate),
+                    future: sdb.getDaySentiment(selectedDate),
                     builder: (context, s) {
                       var logs = ref.watch(dbProvider) as List<SentimentLog>;
                       if (s.hasData) {
@@ -332,7 +304,7 @@ class HourlyDashboard extends ConsumerWidget {
             textStyle: const TextStyle(fontSize: 20),
           ),
           onPressed: () {
-            var res = sdb.getDaySentiment(_selectedDate);
+            var res = sdb.getDaySentiment(selectedDate);
             res.then((slog) {
               ref.read(dbProvider.notifier).set(slog);
             }, onError: (err, stk) => log(err));
@@ -379,10 +351,10 @@ class HourlyDashboard extends ConsumerWidget {
       if (event.runtimeType == FlTapDownEvent) {
         if (res?.spot != null) {
           var hour = res!.spot!.touchedBarGroup.x;
-          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month,
-              _selectedDate.day, hour);
+          selectedDate = DateTime(selectedDate.year, selectedDate.month,
+              selectedDate.day, hour);
           var sdb = getIt<SentimentDB>.call();
-          var ret = sdb.getDaySentiment(_selectedDate);
+          var ret = sdb.getDaySentiment(selectedDate);
           ret.then((slog) {
             ref.read(dbProvider.notifier).set(slog);
           }, onError: (err, stk) => log(err));
@@ -412,10 +384,10 @@ class HourlyDashboard extends ConsumerWidget {
   Future<List<BarChartGroupData>> getHourBars() async {
     List<BarChartGroupData> bars = [];
     var sdb = getIt<SentimentDB>.call();
-    var res = await sdb.getAvgHourlySentiment(_selectedDate);
+    var res = await sdb.getAvgHourlySentiment(selectedDate);
     for (int i = 0; i < 24; i++) {
       List<int>? show;
-      if (_selectedDate.hour == i) {
+      if (selectedDate.hour == i) {
         show = [0];
       }
       bars.add(BarChartGroupData(
