@@ -8,6 +8,7 @@ final dbProvider = StateNotifierProvider((ref) {
 });
 
 final getIt = GetIt.instance;
+DateTime selectedDate = DateTime.now();
 
 class DBMonitor extends StateNotifier<List<SentimentLog>> {
   DBMonitor() : super(<SentimentLog>[]);

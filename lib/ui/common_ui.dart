@@ -1,11 +1,17 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:negate/sentiment_db.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:negate/logger/android_logger.dart';
+
+import 'globals.dart';
 
 class CommonUI {
 
@@ -96,6 +102,52 @@ class CommonUI {
           ],
         );
       },
+    );
+  }
+
+  static ButtonBar dateChanger(BuildContext context,SentimentDB sdb, WidgetRef ref, [StateSetter? setState]) {
+    return ButtonBar(
+      alignment: MainAxisAlignment.center,
+      children: <Widget>[
+        ElevatedButton(
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
+          onPressed: () {
+            selectedDate =
+                selectedDate.subtract(const Duration(days: 1));
+            if (setState != null){
+              setState(() => {});
+            }
+            var res = sdb.getDaySentiment(selectedDate);
+            res.then((slog) {
+              ref.read(dbProvider.notifier).set(slog);
+            }, onError: (err, stk) => log(err));
+          },
+          child: Icon(Icons.chevron_left_rounded, color: Theme.of(context).primaryColor),
+        ),
+        Text(DateFormat.yMMMd().format(selectedDate)),
+        ElevatedButton(
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
+          onPressed: () {
+            var now = DateTime.now();
+            var midnight = DateTime(now.year, now.month, now.day);
+            if (selectedDate
+                .add(const Duration(days: 1))
+                .difference(midnight) >
+                const Duration(days: 1)) {
+              return;
+            }
+            selectedDate = selectedDate.add(const Duration(days: 1));
+            if (setState != null){
+              setState(() => {});
+            }
+            var res = sdb.getDaySentiment(selectedDate);
+            res.then((slog) {
+              ref.read(dbProvider.notifier).set(slog);
+            }, onError: (err, stk) => log(err));
+          },
+          child: Icon(Icons.chevron_right_rounded, color: Theme.of(context).primaryColor),
+        ),
+      ],
     );
   }
 }
