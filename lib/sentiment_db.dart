@@ -11,6 +11,7 @@ import 'package:drift/native.dart';
 import 'package:negate/logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'sentiment_db.g.dart';
 
@@ -64,9 +65,9 @@ class SentimentDB extends _$SentimentDB {
     return jsonEncode(res);
   }
 
-  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations() async {
+  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(DateTime after) async {
     var query = select(sentimentLogs)..where((tbl) =>
-        tbl.hour.isBiggerOrEqualValue(DateTime.now().subtract(const Duration(days: 7))));
+        tbl.hour.isBiggerOrEqualValue(after));
     Map<String, List<double>> weeklyAverage = <String, List<double>>{};
     Map<String, int> weeklyCount = <String, int>{};
     var res = await query.get();

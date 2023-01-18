@@ -21,7 +21,7 @@ class RecommendationsPage extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold))),
           Expanded(
               child: FutureBuilder<List<List<MapEntry<String, List<double>>>>>(
-                  future: sdb.getRecommendations(),
+                  future: sdb.getRecommendations(DateTime.now().subtract(const Duration(days: 7))),
                   builder: (context, s) {
                     var negativeLogs = <MapEntry<String, List<double>>>[];
                     var positiveLogs = <MapEntry<String, List<double>>>[];

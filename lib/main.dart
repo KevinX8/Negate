@@ -16,6 +16,7 @@ import 'package:negate/sentiment_db.dart';
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart' hide MenuItem;
 import 'package:negate/ui/daily_dashboard.dart';
+import 'package:negate/ui/settings.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -148,10 +149,12 @@ class ThemedHourlyUI extends StatelessWidget {
 class HourlyDashboard extends ConsumerWidget {
   HourlyDashboard({super.key});
   bool _requested = false;
+  late BuildContext _context;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var sdb = getIt<SentimentDB>.call();
+    _context = context;
     SharedPreferences.getInstance().then((pref) {
       if ((pref.getBool('accepted_privacy') == null ||
           !pref.getBool('accepted_privacy')!) && !_requested) {
@@ -443,6 +446,9 @@ class HourlyDashboard extends ConsumerWidget {
         log(path);
         break;
       case 'Settings':
+        Navigator.push(_context,
+            MaterialPageRoute(builder: (context) => StatefulBuilder(builder:
+                (BuildContext context, StateSetter setState) => SettingsPage.build(context, setState))));
         break;
       case 'Stop and Exit':
         exit(0);
