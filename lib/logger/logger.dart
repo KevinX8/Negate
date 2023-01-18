@@ -6,7 +6,9 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:negate/sentiment_db.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../sentiment_analysis.dart';
 
@@ -27,9 +29,10 @@ class SentenceLogger {
   static late DriftIsolate _iso;
   static late TfParams _tfp;
   static const int _updateFreq = 1; //update db every 5 minutes
-  final RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
+  RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
   String _lastUsedApp = "";
   bool _dbUpdated = false;
+  double? _multiplier;
 
   factory SentenceLogger() {
     return _instance;
@@ -61,6 +64,14 @@ class SentenceLogger {
       _startBackground,
       IsolateStartRequest(sendDriftIsolate: rPort.sendPort, targetPath: request.targetPath),
     );
+
+    var prefs = request.prefs;
+    if (prefs.getBool('average_sentiment')!) {
+      _multiplier = prefs.getDouble('multiplier_sentiment')!;
+    }
+    if (prefs.getString('blacklist') != null) {
+      blacklist = RegExp(prefs.getString('blacklist')!);
+    }
 
     _iso = await rPort.first as DriftIsolate;
     _tfp = request.tfp;
@@ -100,7 +111,13 @@ class SentenceLogger {
     var appsInPeriod = _appMap.entries.where((element) => element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
       if (app.key == name) continue;
-      app.value.avgScore = ((app.value.avgScore * app.value.numCalled) + score) / (++app.value.numCalled);
+      if (_multiplier == null) {
+        app.value.avgScore =
+            ((app.value.avgScore * app.value.numCalled) + score) /
+                (++app.value.numCalled);
+      } else {
+        app.value.avgScore = (app.value.avgScore * _multiplier!) + (score * (1 - _multiplier!));
+      }
     }
 
     if (_appMap.containsKey(name)) {

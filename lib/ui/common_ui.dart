@@ -34,6 +34,11 @@ class CommonUI {
           )),
       persistentFooterButtons: [
         TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.secondary,
+              padding: const EdgeInsets.all(16.0),
+              textStyle: const TextStyle(fontSize: 20),
+            ),
             onPressed: () => Navigator.pop(context), child: const Text("Start"))
       ],
     );
@@ -74,6 +79,10 @@ class CommonUI {
           ),
           actions: <Widget>[
             TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  textStyle: const TextStyle(fontSize: 20),
+                ),
                 onPressed: () {
                   if (Platform.isAndroid) {
                     SystemNavigator.pop();
@@ -83,6 +92,10 @@ class CommonUI {
                 },
                 child: const Text('Exit')),
             TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  textStyle: const TextStyle(fontSize: 20),
+                ),
                 onPressed: () {
                   final Uri url = Uri.parse(
                       'https://kevinx8.github.io/Negate/Privacy-Policy.md');
@@ -90,6 +103,10 @@ class CommonUI {
                 },
                 child: const Text('Policy')),
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.secondary,
+                textStyle: const TextStyle(fontSize: 20),
+              ),
               child: const Text('Accept'),
               onPressed: () {
                 pref.setBool('accepted_privacy', true);
@@ -110,7 +127,7 @@ class CommonUI {
       alignment: MainAxisAlignment.center,
       children: <Widget>[
         ElevatedButton(
-          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.secondary)),
           onPressed: () {
             selectedDate =
                 selectedDate.subtract(const Duration(days: 1));
@@ -126,7 +143,7 @@ class CommonUI {
         ),
         Text(DateFormat.yMMMd().format(selectedDate)),
         ElevatedButton(
-          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary)),
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).colorScheme.secondary)),
           onPressed: () {
             var now = DateTime.now();
             var midnight = DateTime(now.year, now.month, now.day);
@@ -148,6 +165,58 @@ class CommonUI {
           child: Icon(Icons.chevron_right_rounded, color: Theme.of(context).primaryColor),
         ),
       ],
+    );
+  }
+
+  static Color getBarColour(double val) {
+    int percent = (val * 100).round();
+    if (percent >= 75) {
+      return Colors.green[900]!;
+    } else if (percent >= 65) {
+      return Colors.green;
+    } else if (percent >= 45) {
+      return Colors.greenAccent;
+    } else if (percent >= 35) {
+      return Colors.yellow;
+    } else if (percent > 0) {
+      return Colors.red;
+    } else {
+      return Colors.blueGrey;
+    }
+  }
+
+  static Widget appListView(List<MapEntry<String, List<double>>> logs, SentimentDB sdb) {
+    return ListView.separated(
+      itemCount: logs.length,
+      itemBuilder: (BuildContext context, int index) {
+        var timeUsed = Duration(
+            minutes: logs[index].value[1].toInt());
+        Text used = Text("Used for ${timeUsed.inMinutes} m");
+        if (timeUsed.inHours != 0) {
+          used = Text(
+              "Used for ${timeUsed.inHours} h ${timeUsed.inMinutes % 60} m");
+        }
+        return Container(
+            height: 50,
+            child: ListTile(
+              leading: FutureBuilder<Uint8List?>(
+                future:
+                sdb.getAppIcon(logs[index].key),
+                builder: (ctx, ico) {
+                  if (ico.hasData) {
+                    return Image.memory(ico.data!);
+                  }
+                  return const ImageIcon(null);
+                },
+              ),
+              trailing: Text(
+                  "${(logs[index].value[0] * 100).toStringAsFixed(2)}%"),
+              title: Text(logs[index].key),
+              subtitle: used,
+            ));
+      },
+      separatorBuilder: (BuildContext context, int index) =>
+      const Divider(),
     );
   }
 }

@@ -15,7 +15,7 @@ import 'package:negate/sentiment_db.dart';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/material.dart' hide MenuItem;
-import 'package:negate/ui/daily_dashboard.dart';
+import 'package:negate/ui/daily_breakdown.dart';
 import 'package:negate/ui/settings.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,13 +42,25 @@ Future<void> main() async {
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
 
+  //WidgetsFlutterBinding.ensureInitialized();
+  var prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool('dynamic_theme') == null) {
+    prefs.setBool('dynamic_theme', true);
+    getIt.registerSingleton<bool>(true);
+  } else {
+    getIt.registerSingleton<bool>(prefs.getBool('dynamic_theme')!);
+  }
+  prefs.getBool('average_sentiment') == null ? prefs.setBool('average_sentiment', true) : null;
+  prefs.getDouble('multiplier_sentiment') == null ? prefs.setDouble('multiplier_sentiment', 0.75) : null;
+  prefs.getString('blacklist') == null ? prefs.setString('blacklist', LoggerFactory.getLogger().blacklist.pattern) : null;
+
   if (Platform.isAndroid || Platform.isIOS) {
     LoggerFactory.startLoggerFactory(
-        TfliteRequest(rPort.sendPort, dbString, tfp));
+        TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
   } else {
     await loggerUI.initSystemTray();
     await Isolate.spawn(LoggerFactory.startLoggerFactory,
-        TfliteRequest(rPort.sendPort, dbString, tfp));
+        TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
   }
 
   var iPort = await rPort.first as SendPort;
@@ -114,7 +126,9 @@ class ThemedHourlyUI extends StatelessWidget {
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         ColorScheme light;
         ColorScheme dark;
-        if (lightDynamic != null && darkDynamic != null) {
+        bool enabled = getIt<bool>.call();
+        bool dynamicCheck = lightDynamic != null && darkDynamic != null && enabled;
+        if (dynamicCheck) {
           light = lightDynamic;
           dark = darkDynamic;
         } else {
@@ -134,11 +148,11 @@ class ThemedHourlyUI extends StatelessWidget {
             title: 'Negate Mental Health Tracker',
             theme: ThemeData(
                 colorScheme: light,
-              scaffoldBackgroundColor: light.background,
+               scaffoldBackgroundColor: dynamicCheck ? light.background : null,
               useMaterial3: true),
             darkTheme: ThemeData(
                 colorScheme: dark,
-                scaffoldBackgroundColor: dark.background,
+                scaffoldBackgroundColor: dynamicCheck ? dark.background : null,
                 useMaterial3: true),
             themeMode: ThemeMode.system,
             home: home);
@@ -171,7 +185,7 @@ class HourlyDashboard extends ConsumerWidget {
     });
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hourly Dashboard'),
+        title: const Text('Dashboard'),
         actions: [
           IconButton(
               onPressed: () {
@@ -194,7 +208,7 @@ class HourlyDashboard extends ConsumerWidget {
                     MaterialPageRoute(
                         builder: (context) {
                           return StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-                            return DailyDashboard.dashboard(context, sdb, ref, setState);
+                            return DailyBreakdown.dashboard(context, sdb, ref, setState);
                           });
                           }));
               },
@@ -302,7 +316,7 @@ class HourlyDashboard extends ConsumerWidget {
       persistentFooterButtons: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.secondary,
             padding: const EdgeInsets.all(16.0),
             textStyle: const TextStyle(fontSize: 20),
           ),
@@ -399,27 +413,12 @@ class HourlyDashboard extends ConsumerWidget {
             BarChartRodData(
                 toY: (res[i] * 100).roundToDouble(),
                 width: 10,
-                color: getBarColour(res[i]),
+                color: CommonUI.getBarColour(res[i]),
                 borderRadius: const BorderRadius.all(Radius.zero))
           ],
           showingTooltipIndicators: show));
     }
     return bars;
-  }
-
-  Color getBarColour(double val) {
-    int percent = (val * 100).round();
-    if (percent >= 75) {
-      return Colors.green[900]!;
-    } else if (percent >= 65) {
-      return Colors.green;
-    } else if (percent >= 45) {
-      return Colors.greenAccent;
-    } else if (percent >= 35) {
-      return Colors.yellow;
-    } else {
-      return Colors.red;
-    }
   }
 
   void handleMenu(String value) async {

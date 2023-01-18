@@ -1,6 +1,5 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
@@ -65,9 +64,13 @@ class SentimentDB extends _$SentimentDB {
     return jsonEncode(res);
   }
 
-  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(DateTime after) async {
+  Future<List<MapEntry<String, List<double>>>> _getSentimentsByName(DateTime after, [DateTime? before]) async {
     var query = select(sentimentLogs)..where((tbl) =>
         tbl.hour.isBiggerOrEqualValue(after));
+    if (before != null) {
+      query = select(sentimentLogs)..where((tbl) =>
+        tbl.hour.isBetweenValues(after, before));
+    }
     Map<String, List<double>> weeklyAverage = <String, List<double>>{};
     Map<String, int> weeklyCount = <String, int>{};
     var res = await query.get();
@@ -77,17 +80,51 @@ class SentimentDB extends _$SentimentDB {
         weeklyCount[log.name] = weeklyCount[log.name]! + 1;
         weeklyAverage[log.name]![1] = weeklyAverage[log.name]![1] + log.timeUsed;
       } else {
-        weeklyAverage.putIfAbsent(log.name, () => [log.avgScore, log.timeUsed.toDouble()]);
+        weeklyAverage.putIfAbsent(log.name, () => [log.avgScore, log.timeUsed.toDouble(), 0]);
         weeklyCount.putIfAbsent(log.name, () => 1);
       }
     }
-    var sorted = weeklyAverage.entries.toList();
+    return weeklyAverage.entries.toList();
+  }
+
+  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(DateTime after) async {
+    var sorted = await _getSentimentsByName(after);
     //Ignore apps used for less than 10 minutes
     sorted.removeWhere((element) => element.value[1] < 10);
     sorted.sort((a, b) => a.value[0].compareTo(b.value[0]));
-    var negative = sorted.sublist(0,5);
-    var positive = sorted.reversed.toList().sublist(0, 5);
+    var negative = sorted;
+    var positive = sorted.reversed.toList();
+    if (sorted.length > 5) {
+      negative = sorted.sublist(0,5);
+      positive = sorted.reversed.toList().sublist(0, 5);
+    }
     return [negative, positive];
+  }
+
+  Future<List<MapEntry<String, List<double>>>> getDailyBreakdown(DateTime date) async {
+    var selectedDate = date.alignDateTime(const Duration(days: 1));
+    var sentiments = await _getSentimentsByName(selectedDate, selectedDate.add(const Duration(days: 1)));
+    sentiments.sort((b, a) => a.value[1].compareTo(b.value[1]));
+    var sub = sentiments;
+    double totalTime = 0;
+    double subTime = 0;
+    int counter = 0;
+
+    for (var sentiment in sentiments) {
+      totalTime += sentiment.value[1];
+      if (counter == 7) {
+        subTime = totalTime;
+      }
+      counter++;
+    }
+    for (var sentiment in sub) {
+      sentiment.value[2] = sentiment.value[1] / totalTime;
+    }
+    if (sentiments.length > 8) {
+      sub = sentiments.sublist(0,8);
+      sub.add(MapEntry('Other', [-1, (totalTime - subTime), (totalTime - subTime)/totalTime]));
+    }
+    return sub;
   }
 
   Future<List<double>> getAvgHourlySentiment(DateTime date) async {
@@ -203,8 +240,9 @@ class TfParams {
 
 class TfliteRequest extends IsolateStartRequest {
   final TfParams tfp;
+  final SharedPreferences prefs;
 
-  TfliteRequest(SendPort sendDriftIsolate,String targetPath, this.tfp) : super(sendDriftIsolate: sendDriftIsolate, targetPath: targetPath);
+  TfliteRequest(SendPort sendDriftIsolate,String targetPath, this.tfp, this.prefs) : super(sendDriftIsolate: sendDriftIsolate, targetPath: targetPath);
 }
 
 class AddSentimentRequest {
