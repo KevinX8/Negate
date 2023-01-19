@@ -38,20 +38,23 @@ class SentimentDB extends _$SentimentDB {
   SentimentDB() : super(_openConnection());
   //SentimentDB.ndb(NativeDatabase db): super(LazyDatabase(() async {return db;}));
 
-  SentimentDB.connect(DatabaseConnection connection) : super.connect(connection);
+  SentimentDB.connect(DatabaseConnection connection)
+      : super.connect(connection);
   // you should bump this number whenever you change or add a table definition.
   // Migrations are covered later in the documentation.
   @override
   int get schemaVersion => 1;
 
   Future<Uint8List> getAppIcon(String name) async {
-    var ico = await (select(appIcons)..where((tbl) => tbl.name.equals(name))).getSingle();
+    var ico = await (select(appIcons)..where((tbl) => tbl.name.equals(name)))
+        .getSingle();
     return ico.icon;
   }
 
   Future<HashSet<String>> getListOfIcons() async {
     var set = HashSet<String>();
-    var iconList = await (selectOnly(appIcons)..addColumns([appIcons.name])).get();
+    var iconList =
+        await (selectOnly(appIcons)..addColumns([appIcons.name])).get();
     for (var ico in iconList) {
       set.add(ico.read(appIcons.name)!);
     }
@@ -64,30 +67,38 @@ class SentimentDB extends _$SentimentDB {
     return jsonEncode(res);
   }
 
-  Future<List<MapEntry<String, List<double>>>> _getSentimentsByName(DateTime after, [DateTime? before]) async {
-    var query = select(sentimentLogs)..where((tbl) =>
-        tbl.hour.isBiggerOrEqualValue(after));
+  Future<List<MapEntry<String, List<double>>>> _getSentimentsByName(
+      DateTime after,
+      [DateTime? before]) async {
+    var query = select(sentimentLogs)
+      ..where((tbl) => tbl.hour.isBiggerOrEqualValue(after));
     if (before != null) {
-      query = select(sentimentLogs)..where((tbl) =>
-        tbl.hour.isBetweenValues(after, before));
+      query = select(sentimentLogs)
+        ..where((tbl) => tbl.hour.isBetweenValues(after, before));
     }
     Map<String, List<double>> weeklyAverage = <String, List<double>>{};
     Map<String, int> weeklyCount = <String, int>{};
     var res = await query.get();
     for (var log in res) {
       if (weeklyAverage.containsKey(log.name)) {
-        weeklyAverage[log.name]![0] = ((weeklyAverage[log.name]![0] * weeklyCount[log.name]!) + log.avgScore) / (weeklyCount[log.name]! + 1);
+        weeklyAverage[log.name]![0] =
+            ((weeklyAverage[log.name]![0] * weeklyCount[log.name]!) +
+                    log.avgScore) /
+                (weeklyCount[log.name]! + 1);
         weeklyCount[log.name] = weeklyCount[log.name]! + 1;
-        weeklyAverage[log.name]![1] = weeklyAverage[log.name]![1] + log.timeUsed;
+        weeklyAverage[log.name]![1] =
+            weeklyAverage[log.name]![1] + log.timeUsed;
       } else {
-        weeklyAverage.putIfAbsent(log.name, () => [log.avgScore, log.timeUsed.toDouble(), 0]);
+        weeklyAverage.putIfAbsent(
+            log.name, () => [log.avgScore, log.timeUsed.toDouble(), 0]);
         weeklyCount.putIfAbsent(log.name, () => 1);
       }
     }
     return weeklyAverage.entries.toList();
   }
 
-  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(DateTime after) async {
+  Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(
+      DateTime after) async {
     var sorted = await _getSentimentsByName(after);
     //Ignore apps used for less than 10 minutes
     sorted.removeWhere((element) => element.value[1] < 10);
@@ -95,15 +106,17 @@ class SentimentDB extends _$SentimentDB {
     var negative = sorted;
     var positive = sorted.reversed.toList();
     if (sorted.length > 5) {
-      negative = sorted.sublist(0,5);
+      negative = sorted.sublist(0, 5);
       positive = sorted.reversed.toList().sublist(0, 5);
     }
     return [negative, positive];
   }
 
-  Future<List<MapEntry<String, List<double>>>> getDailyBreakdown(DateTime date) async {
+  Future<List<MapEntry<String, List<double>>>> getDailyBreakdown(
+      DateTime date) async {
     var selectedDate = date.alignDateTime(const Duration(days: 1));
-    var sentiments = await _getSentimentsByName(selectedDate, selectedDate.add(const Duration(days: 1)));
+    var sentiments = await _getSentimentsByName(
+        selectedDate, selectedDate.add(const Duration(days: 1)));
     sentiments.sort((b, a) => a.value[1].compareTo(b.value[1]));
     var sub = sentiments;
     double totalTime = 0;
@@ -121,38 +134,46 @@ class SentimentDB extends _$SentimentDB {
       sentiment.value[2] = sentiment.value[1] / totalTime;
     }
     if (sentiments.length > 8) {
-      sub = sentiments.sublist(0,8);
-      sub.add(MapEntry('Other', [-1, (totalTime - subTime), (totalTime - subTime)/totalTime]));
+      sub = sentiments.sublist(0, 8);
+      sub.add(MapEntry('Other',
+          [-1, (totalTime - subTime), (totalTime - subTime) / totalTime]));
     }
     return sub;
   }
 
   Future<List<double>> getAvgHourlySentiment(DateTime date) async {
-    var query = (select(sentimentLogs)..where((tbl) => tbl.hour.year.equals(date.year)
-        & tbl.hour.month.equals(date.month)
-        & tbl.hour.day.equals(date.day)));
+    var query = (select(sentimentLogs)
+      ..where((tbl) =>
+          tbl.hour.year.equals(date.year) &
+          tbl.hour.month.equals(date.month) &
+          tbl.hour.day.equals(date.day)));
     var res = await query.get();
-    var avgs = List<double>.filled(24, 0);
+    var averages = List<double>.filled(24, 0);
     var totalTime = List<int>.filled(24, 0);
     for (var i in res) {
-      avgs[i.hour.hour] += i.avgScore * i.timeUsed;
+      averages[i.hour.hour] += i.avgScore * i.timeUsed;
       totalTime[i.hour.hour] += i.timeUsed;
     }
-    for (int i = 0; i < 24;i++) {
-      if (avgs[i] == 0) {
+    for (int i = 0; i < 24; i++) {
+      if (averages[i] == 0) {
         continue;
       }
-      avgs[i] /= totalTime[i];
+      averages[i] /= totalTime[i];
     }
-    return avgs;
+    return averages;
   }
 
   Future<List<SentimentLog>> getDaySentiment(DateTime time) async {
-    return await (select(sentimentLogs)..where((tbl) {
-      return tbl.hour.equals(time.alignDateTime(const Duration(hours: 1)));
-    })..orderBy(
-        [(t) => OrderingTerm(expression: sentimentLogs.timeUsed, mode: OrderingMode.desc)]
-    )).get();
+    return await (select(sentimentLogs)
+          ..where((tbl) {
+            return tbl.hour
+                .equals(time.alignDateTime(const Duration(hours: 1)));
+          })
+          ..orderBy([
+            (t) => OrderingTerm(
+                expression: sentimentLogs.timeUsed, mode: OrderingMode.desc)
+          ]))
+        .get();
   }
 
   static Future<void> addAppIcon(AddAppIconRequest r) async {
@@ -168,9 +189,12 @@ class SentimentDB extends _$SentimentDB {
     await sdb.batch((batch) {
       List<SentimentLogsCompanion> logs = <SentimentLogsCompanion>[];
       for (var log in r.sentiments.entries) {
-        var entry = SentimentLogsCompanion(name: Value(log.key), hour: Value(
-            log.value.lastTimeUsed.alignDateTime(const Duration(hours: 1))),
-            timeUsed: Value(log.value.totalTimeUsed.ceil()), avgScore: Value(log.value.avgScore));
+        var entry = SentimentLogsCompanion(
+            name: Value(log.key),
+            hour: Value(
+                log.value.lastTimeUsed.alignDateTime(const Duration(hours: 1))),
+            timeUsed: Value(log.value.totalTimeUsed.ceil()),
+            avgScore: Value(log.value.avgScore));
         logs.add(entry);
       }
       batch.insertAllOnConflictUpdate(sdb.sentimentLogs, logs);
@@ -179,8 +203,7 @@ class SentimentDB extends _$SentimentDB {
 }
 
 extension Alignment on DateTime {
-  DateTime alignDateTime(Duration alignment,
-      [bool roundUp = false]) {
+  DateTime alignDateTime(Duration alignment, [bool roundUp = false]) {
     assert(alignment >= Duration.zero);
     if (alignment == Duration.zero) return this;
     final correction = Duration(
@@ -188,23 +211,23 @@ extension Alignment on DateTime {
         hours: alignment.inDays > 0
             ? hour
             : alignment.inHours > 0
-            ? hour % alignment.inHours
-            : 0,
+                ? hour % alignment.inHours
+                : 0,
         minutes: alignment.inHours > 0
             ? minute
             : alignment.inMinutes > 0
-            ? minute % alignment.inMinutes
-            : 0,
+                ? minute % alignment.inMinutes
+                : 0,
         seconds: alignment.inMinutes > 0
             ? second
             : alignment.inSeconds > 0
-            ? second % alignment.inSeconds
-            : 0,
+                ? second % alignment.inSeconds
+                : 0,
         milliseconds: alignment.inSeconds > 0
             ? millisecond
             : alignment.inMilliseconds > 0
-            ? millisecond % alignment.inMilliseconds
-            : 0,
+                ? millisecond % alignment.inMilliseconds
+                : 0,
         microseconds: alignment.inMilliseconds > 0 ? microsecond : 0);
     if (correction == Duration.zero) return this;
     final corrected = subtract(correction);
@@ -228,7 +251,8 @@ class IsolateStartRequest {
   final SendPort sendDriftIsolate;
   final String targetPath;
 
-  IsolateStartRequest({required this.sendDriftIsolate, required this.targetPath});
+  IsolateStartRequest(
+      {required this.sendDriftIsolate, required this.targetPath});
 }
 
 class TfParams {
@@ -242,7 +266,9 @@ class TfliteRequest extends IsolateStartRequest {
   final TfParams tfp;
   final SharedPreferences prefs;
 
-  TfliteRequest(SendPort sendDriftIsolate,String targetPath, this.tfp, this.prefs) : super(sendDriftIsolate: sendDriftIsolate, targetPath: targetPath);
+  TfliteRequest(
+      SendPort sendDriftIsolate, String targetPath, this.tfp, this.prefs)
+      : super(sendDriftIsolate: sendDriftIsolate, targetPath: targetPath);
 }
 
 class AddSentimentRequest {

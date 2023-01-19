@@ -69,7 +69,7 @@ class SentimentAnalysis {
 
   List<List<double>> tokenizeInputText(String text) {
     // Whitespace tokenization
-    final toks = text.split(' ');
+    final tokens = text.split(' ');
 
     // Create a list of length==_sentenceLen filled with the value <pad>
     var vec = List<double>.filled(_sentenceLen, dictionary[pad]!.toDouble());
@@ -80,7 +80,7 @@ class SentimentAnalysis {
     }
 
     // For each word in sentence find corresponding index in dict
-    for (var tok in toks) {
+    for (var tok in tokens) {
       if (index > _sentenceLen) {
         break;
       }

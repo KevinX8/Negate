@@ -11,11 +11,6 @@ import 'package:permission_handler/permission_handler.dart';
 
 class AndroidLogger extends SentenceLogger {
   static final AndroidLogger _instance = AndroidLogger.init();
-  @override
-  final RegExp blacklist = RegExp(".*system.*|.*keyboard.*|.*input.*|"
-      ".*honeyboard.*|.*swiftkey.*|.*lawnchair.*|.*launcher.*|.*settings.*");
-
-
 
   factory AndroidLogger() {
     return _instance;
@@ -55,16 +50,19 @@ class AndroidLogger extends SentenceLogger {
       ),
     );
     var status = await Permission.notification.request();
-      if (status.isGranted) {
-        FlutterForegroundTask.startService(notificationTitle: "Sentiment Tracker",
-            notificationText: "Analyzing sentence sentiment");
-      }
+    if (status.isGranted) {
+      FlutterForegroundTask.startService(
+          notificationTitle: "Sentiment Tracker",
+          notificationText: "Analyzing sentence sentiment");
+    }
   }
 
   Future<void> startAccessibility() async {
-    bool status = await FlutterAccessibilityService.isAccessibilityPermissionEnabled();
+    bool status =
+        await FlutterAccessibilityService.isAccessibilityPermissionEnabled();
     if (!status) {
-      status = await FlutterAccessibilityService.requestAccessibilityPermission();
+      status =
+          await FlutterAccessibilityService.requestAccessibilityPermission();
     }
     if (status) {
       FlutterAccessibilityService.accessStream.listen(_accessibilityListener);
@@ -72,7 +70,7 @@ class AndroidLogger extends SentenceLogger {
   }
 
   static void _accessibilityListener(AccessibilityEvent event) {
-    if (AndroidLogger().blacklist.hasMatch(event.packageName!)){
+    if (AndroidLogger().blacklist.hasMatch(event.packageName!)) {
       return;
     }
     if (event.eventType == EventType.typeWindowStateChanged) {

@@ -1,11 +1,8 @@
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/globals.dart';
 
@@ -22,35 +19,34 @@ class DailyBreakdown {
             style: TextStyle(fontWeight: FontWeight.bold)),
         Expanded(
             child: Padding(
-             padding: const EdgeInsets.all(30),
-             child: FutureBuilder<List<MapEntry<String, List<double>>>>(
-                future: sdb.getDailyBreakdown(selectedDate),
-                builder: (context, s) {
-                  List<MapEntry<String, List<double>>> breakdownList = [];
-                  if (s.hasData) {
-                    if (s.data!.isNotEmpty) {
-                      breakdownList = s.data!;
-                    }
-                  }
-                  return Column(
-                    children: [
-                      Expanded(child:
-                    PieChart(PieChartData(
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-                    sections: showingSections(breakdownList, sdb),
-                  ))),
-                      Expanded(child:
-                          CommonUI.appListView(breakdownList, sdb)
-                      )
-                  ]);
-                }))),
+                padding: const EdgeInsets.all(30),
+                child: FutureBuilder<List<MapEntry<String, List<double>>>>(
+                    future: sdb.getDailyBreakdown(selectedDate),
+                    builder: (context, s) {
+                      List<MapEntry<String, List<double>>> breakdownList = [];
+                      if (s.hasData) {
+                        if (s.data!.isNotEmpty) {
+                          breakdownList = s.data!;
+                        }
+                      }
+                      return Column(children: [
+                        Expanded(
+                            child: PieChart(PieChartData(
+                          borderData: FlBorderData(
+                            show: false,
+                          ),
+                          sections: showingSections(breakdownList, sdb),
+                        ))),
+                        Expanded(
+                            child: CommonUI.appListView(breakdownList, sdb))
+                      ]);
+                    }))),
       ]),
     );
   }
 
-  static List<PieChartSectionData> showingSections(List<MapEntry<String, List<double>>> breakdownList, SentimentDB sdb) {
+  static List<PieChartSectionData> showingSections(
+      List<MapEntry<String, List<double>>> breakdownList, SentimentDB sdb) {
     List<PieChartSectionData> data = [];
     const fontSize = 16.0;
     const radius = 100.0;
@@ -59,7 +55,9 @@ class DailyBreakdown {
       data.add(PieChartSectionData(
         color: CommonUI.getBarColour(entry.value[0]),
         value: entry.value[2] * 360,
-        title: entry.value[0] > 0 ? '${(entry.value[0] * 100).toStringAsFixed(0)}%' : '...',
+        title: entry.value[0] > 0
+            ? '${(entry.value[0] * 100).toStringAsFixed(0)}%'
+            : '...',
         radius: radius,
         titleStyle: TextStyle(
           fontSize: fontSize,
@@ -80,7 +78,8 @@ class DailyBreakdown {
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge(this.appName, {
+  const _Badge(
+    this.appName, {
     required this.size,
     required this.borderColor,
     required this.sdb,

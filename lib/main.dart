@@ -42,7 +42,6 @@ Future<void> main() async {
   await analyser.init();
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
 
-  //WidgetsFlutterBinding.ensureInitialized();
   var prefs = await SharedPreferences.getInstance();
   if (prefs.getBool('dynamic_theme') == null) {
     prefs.setBool('dynamic_theme', true);
@@ -50,9 +49,15 @@ Future<void> main() async {
   } else {
     getIt.registerSingleton<bool>(prefs.getBool('dynamic_theme')!);
   }
-  prefs.getBool('average_sentiment') == null ? prefs.setBool('average_sentiment', true) : null;
-  prefs.getDouble('multiplier_sentiment') == null ? prefs.setDouble('multiplier_sentiment', 0.75) : null;
-  prefs.getString('blacklist') == null ? prefs.setString('blacklist', LoggerFactory.getLogger().blacklist.pattern) : null;
+  prefs.getBool('average_sentiment') == null
+      ? prefs.setBool('average_sentiment', true)
+      : null;
+  prefs.getDouble('multiplier_sentiment') == null
+      ? prefs.setDouble('multiplier_sentiment', 0.75)
+      : null;
+  prefs.getString('blacklist') == null
+      ? prefs.setString('blacklist', LoggerFactory.getLoggerRegex().pattern)
+      : null;
 
   if (Platform.isAndroid || Platform.isIOS) {
     LoggerFactory.startLoggerFactory(
@@ -123,43 +128,45 @@ class ThemedHourlyUI extends StatelessWidget {
     }
 
     return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme light;
-        ColorScheme dark;
-        bool enabled = getIt<bool>.call();
-        bool dynamicCheck = lightDynamic != null && darkDynamic != null && enabled;
-        if (dynamicCheck) {
-          light = lightDynamic;
-          dark = darkDynamic;
-        } else {
-          light = ColorScheme.fromSwatch(
-              primarySwatch: Colors.deepPurple,
-              primaryColorDark: Colors.deepPurpleAccent,
-              accentColor: Colors.deepPurpleAccent,
-              brightness: Brightness.light);
-          dark = ColorScheme.fromSwatch(
-              primarySwatch: Colors.deepPurple,
-              primaryColorDark: Colors.deepPurpleAccent,
-              cardColor: Colors.deepPurpleAccent,
-              accentColor: Colors.deepPurpleAccent,
-              brightness: Brightness.dark);
-        }
-        return MaterialApp(
-            title: 'Negate Mental Health Tracker',
-            theme: ThemeData(
-                colorScheme: light,
-               scaffoldBackgroundColor: dynamicCheck ? light.background : null,
+        builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+      ColorScheme light;
+      ColorScheme dark;
+      bool enabled = getIt<bool>.call();
+      bool dynamicCheck =
+          lightDynamic != null && darkDynamic != null && enabled;
+      if (dynamicCheck) {
+        light = lightDynamic;
+        dark = darkDynamic;
+      } else {
+        light = ColorScheme.fromSwatch(
+            primarySwatch: Colors.deepPurple,
+            primaryColorDark: Colors.deepPurpleAccent,
+            accentColor: Colors.deepPurpleAccent,
+            brightness: Brightness.light);
+        dark = ColorScheme.fromSwatch(
+            primarySwatch: Colors.deepPurple,
+            primaryColorDark: Colors.deepPurpleAccent,
+            cardColor: Colors.deepPurpleAccent,
+            accentColor: Colors.deepPurpleAccent,
+            brightness: Brightness.dark);
+      }
+      return MaterialApp(
+          title: 'Negate Mental Health Tracker',
+          theme: ThemeData(
+              colorScheme: light,
+              scaffoldBackgroundColor: dynamicCheck ? light.background : null,
               useMaterial3: true),
-            darkTheme: ThemeData(
-                colorScheme: dark,
-                scaffoldBackgroundColor: dynamicCheck ? dark.background : null,
-                useMaterial3: true),
-            themeMode: ThemeMode.system,
-            home: home);
+          darkTheme: ThemeData(
+              colorScheme: dark,
+              scaffoldBackgroundColor: dynamicCheck ? dark.background : null,
+              useMaterial3: true),
+          themeMode: ThemeMode.system,
+          home: home);
     });
   }
 }
 
+//ignore: must_be_immutable
 class HourlyDashboard extends ConsumerWidget {
   HourlyDashboard({super.key});
   bool _requested = false;
@@ -171,11 +178,14 @@ class HourlyDashboard extends ConsumerWidget {
     _context = context;
     SharedPreferences.getInstance().then((pref) {
       if ((pref.getBool('accepted_privacy') == null ||
-          !pref.getBool('accepted_privacy')!) && !_requested) {
+              !pref.getBool('accepted_privacy')!) &&
+          !_requested) {
         _requested = true;
         CommonUI.showDisclosure(context, pref);
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => CommonUI.infoPage(context)));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => CommonUI.infoPage(context)));
       } else {
         if (Platform.isAndroid && !_requested) {
           _requested = true;
@@ -184,15 +194,20 @@ class HourlyDashboard extends ConsumerWidget {
       }
     });
     var baseColour = Theme.of(context).scaffoldBackgroundColor;
-    var settingsBG = baseColour.withRed(baseColour.red - 5).withBlue(baseColour.blue - 5).withGreen(baseColour.green - 5);
+    var settingsBG = baseColour
+        .withRed(baseColour.red - 5)
+        .withBlue(baseColour.blue - 5)
+        .withGreen(baseColour.green - 5);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
           IconButton(
               onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => CommonUI.infoPage(context)));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CommonUI.infoPage(context)));
               },
               icon: const Icon(Icons.info_outline)),
           IconButton(
@@ -205,14 +220,13 @@ class HourlyDashboard extends ConsumerWidget {
               icon: const Icon(Icons.analytics)),
           IconButton(
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) {
-                          return StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-                            return DailyBreakdown.dashboard(context, sdb, ref, setState);
-                          });
-                          }));
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return StatefulBuilder(
+                      builder: (BuildContext context, StateSetter setState) {
+                    return DailyBreakdown.dashboard(
+                        context, sdb, ref, setState);
+                  });
+                }));
               },
               icon: const Icon(Icons.pie_chart)),
           PopupMenuButton<String>(
@@ -292,7 +306,7 @@ class HourlyDashboard extends ConsumerWidget {
                       return ListView.separated(
                         itemCount: logs.length,
                         itemBuilder: (BuildContext context, int index) {
-                          return Container(
+                          return SizedBox(
                               height: 50,
                               child: ListTile(
                                 leading: FutureBuilder<Uint8List?>(
@@ -335,7 +349,6 @@ class HourlyDashboard extends ConsumerWidget {
     );
   }
 
-
   Widget bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontWeight: FontWeight.normal, fontSize: 14);
     String text;
@@ -359,47 +372,47 @@ class HourlyDashboard extends ConsumerWidget {
   }
 
   BarTouchData barTouchData(WidgetRef ref) => BarTouchData(
-    enabled: true,
-    mouseCursorResolver: (barData, res) {
-      if (res?.spot != null) {
-        return SystemMouseCursors.click;
-      }
-      return SystemMouseCursors.basic;
-    },
-    handleBuiltInTouches: true,
-    touchCallback: (event, res) {
-      if (event.runtimeType == FlTapDownEvent) {
-        if (res?.spot != null) {
-          var hour = res!.spot!.touchedBarGroup.x;
-          selectedDate = DateTime(selectedDate.year, selectedDate.month,
-              selectedDate.day, hour);
-          var sdb = getIt<SentimentDB>.call();
-          var ret = sdb.getDaySentiment(selectedDate);
-          ret.then((slog) {
-            ref.read(dbProvider.notifier).set(slog);
-          }, onError: (err, stk) => log(err));
-        }
-      }
-    },
-    touchTooltipData: BarTouchTooltipData(
-      tooltipBgColor: Colors.transparent,
-      tooltipPadding: EdgeInsets.zero,
-      tooltipMargin: 8,
-      getTooltipItem: (
-          BarChartGroupData group,
-          int groupIndex,
-          BarChartRodData rod,
-          int rodIndex,
+        enabled: true,
+        mouseCursorResolver: (barData, res) {
+          if (res?.spot != null) {
+            return SystemMouseCursors.click;
+          }
+          return SystemMouseCursors.basic;
+        },
+        handleBuiltInTouches: true,
+        touchCallback: (event, res) {
+          if (event.runtimeType == FlTapDownEvent) {
+            if (res?.spot != null) {
+              var hour = res!.spot!.touchedBarGroup.x;
+              selectedDate = DateTime(selectedDate.year, selectedDate.month,
+                  selectedDate.day, hour);
+              var sdb = getIt<SentimentDB>.call();
+              var ret = sdb.getDaySentiment(selectedDate);
+              ret.then((slog) {
+                ref.read(dbProvider.notifier).set(slog);
+              }, onError: (err, stk) => log(err));
+            }
+          }
+        },
+        touchTooltipData: BarTouchTooltipData(
+          tooltipBgColor: Colors.transparent,
+          tooltipPadding: EdgeInsets.zero,
+          tooltipMargin: 8,
+          getTooltipItem: (
+            BarChartGroupData group,
+            int groupIndex,
+            BarChartRodData rod,
+            int rodIndex,
           ) {
-        return BarTooltipItem(
-          '${rod.toY.round()}%',
-          const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        );
-      },
-    ),
-  );
+            return BarTooltipItem(
+              '${rod.toY.round()}%',
+              const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
+        ),
+      );
 
   Future<List<BarChartGroupData>> getHourBars() async {
     List<BarChartGroupData> bars = [];
@@ -448,9 +461,12 @@ class HourlyDashboard extends ConsumerWidget {
         log(path);
         break;
       case 'Settings':
-        Navigator.push(_context,
-            MaterialPageRoute(builder: (context) => StatefulBuilder(builder:
-                (BuildContext context, StateSetter setState) => SettingsPage.build(context, setState))));
+        Navigator.push(
+            _context,
+            MaterialPageRoute(
+                builder: (context) => StatefulBuilder(
+                    builder: (BuildContext context, StateSetter setState) =>
+                        SettingsPage.build(context, setState))));
         break;
       case 'Stop and Exit':
         exit(0);

@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:negate/sentiment_db.dart';
 import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/globals.dart';
@@ -6,7 +5,6 @@ import 'package:negate/ui/globals.dart';
 import 'package:flutter/material.dart' hide MenuItem;
 
 class RecommendationsPage extends StatelessWidget {
-
   const RecommendationsPage({super.key});
 
   @override
@@ -22,7 +20,8 @@ class RecommendationsPage extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold))),
           Expanded(
               child: FutureBuilder<List<List<MapEntry<String, List<double>>>>>(
-                  future: sdb.getRecommendations(DateTime.now().subtract(const Duration(days: 7))),
+                  future: sdb.getRecommendations(
+                      DateTime.now().subtract(const Duration(days: 7))),
                   builder: (context, s) {
                     var negativeLogs = <MapEntry<String, List<double>>>[];
                     var positiveLogs = <MapEntry<String, List<double>>>[];
@@ -33,18 +32,13 @@ class RecommendationsPage extends StatelessWidget {
                       }
                     }
                     return Column(children: [
-                      Expanded(child:
-                          CommonUI.appListView(negativeLogs, sdb)
-                      ),
+                      Expanded(child: CommonUI.appListView(negativeLogs, sdb)),
                       const Padding(
                           padding: EdgeInsets.all(10),
                           child: Text(
                               "Top 5 most Positive Apps of the last 7 days",
-                              style:
-                              TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(child:
-                          CommonUI.appListView(positiveLogs, sdb)
-                      ),
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      Expanded(child: CommonUI.appListView(positiveLogs, sdb)),
                     ]);
                   })),
         ],

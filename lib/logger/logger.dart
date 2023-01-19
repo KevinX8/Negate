@@ -6,9 +6,7 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:negate/sentiment_db.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../sentiment_analysis.dart';
 
@@ -29,7 +27,8 @@ class SentenceLogger {
   static late DriftIsolate _iso;
   static late TfParams _tfp;
   static const int _updateFreq = 1; //update db every 5 minutes
-  RegExp blacklist = RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
+  RegExp blacklist =
+      RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
   String _lastUsedApp = "";
   bool _dbUpdated = false;
   double? _multiplier;
@@ -41,7 +40,8 @@ class SentenceLogger {
   SentenceLogger.init();
 
   void logToDB() {
-    Isolate.spawn(SentimentDB.addSentiments, AddSentimentRequest(_appMap, _iso.connectPort));
+    Isolate.spawn(SentimentDB.addSentiments,
+        AddSentimentRequest(_appMap, _iso.connectPort));
   }
 
   static void _startBackground(IsolateStartRequest request) {
@@ -52,7 +52,7 @@ class SentenceLogger {
     // background isolate. If we used DriftIsolate.spawn, a third isolate would be
     // started which is not what we want!
     final driftIsolate = DriftIsolate.inCurrent(
-          () => DatabaseConnection(executor),
+      () => DatabaseConnection(executor),
     );
     // inform the starting isolate about this, so that it can call .connect()
     request.sendDriftIsolate.send(driftIsolate);
@@ -62,7 +62,8 @@ class SentenceLogger {
     var rPort = ReceivePort();
     await Isolate.spawn(
       _startBackground,
-      IsolateStartRequest(sendDriftIsolate: rPort.sendPort, targetPath: request.targetPath),
+      IsolateStartRequest(
+          sendDriftIsolate: rPort.sendPort, targetPath: request.targetPath),
     );
 
     var prefs = request.prefs;
@@ -93,8 +94,7 @@ class SentenceLogger {
     SentenceLogger._sentence.clear();
   }
 
-  void addAppEntry
-      () {
+  void addAppEntry() {
     log(getSentence());
     if (getSentence().length < 6) {
       clearSentence();
@@ -108,7 +108,8 @@ class SentenceLogger {
 
     var now = DateTime.now();
     //Update average score for all apps used in the last 10 minutes as well
-    var appsInPeriod = _appMap.entries.where((element) => element.value.lastTimeUsed.difference(now).inMinutes <= 10);
+    var appsInPeriod = _appMap.entries.where((element) =>
+        element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
       if (app.key == name) continue;
       if (_multiplier == null) {
@@ -116,14 +117,18 @@ class SentenceLogger {
             ((app.value.avgScore * app.value.numCalled) + score) /
                 (++app.value.numCalled);
       } else {
-        app.value.avgScore = (app.value.avgScore * _multiplier!) + (score * (1 - _multiplier!));
+        app.value.avgScore =
+            (app.value.avgScore * _multiplier!) + (score * (1 - _multiplier!));
       }
     }
 
     if (_appMap.containsKey(name)) {
-      double timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
+      double timeUsedSince =
+          now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
       double totalTimeUsed = _appMap[name]!.totalTimeUsed + timeUsedSince;
-      double avgScore = ((_appMap[name]!.avgScore * _appMap[name]!.numCalled) + score) / (_appMap[name]!.numCalled + 1);
+      double avgScore =
+          ((_appMap[name]!.avgScore * _appMap[name]!.numCalled) + score) /
+              (_appMap[name]!.numCalled + 1);
 
       //If the next hour has been reached reset the average score and time used
       if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
@@ -135,7 +140,8 @@ class SentenceLogger {
         }
         _appMap[name]!.numCalled = 0;
       }
-      _appMap[name] = AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
+      _appMap[name] =
+          AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
     } else {
       _appMap.putIfAbsent(name, () => AppList(now, 0, score, 1));
     }
@@ -154,8 +160,8 @@ class SentenceLogger {
       return;
     }
     if (_appMap.containsKey(name)) {
-      double timeUsedSince = now.difference(_appMap[name]!.lastTimeUsed)
-          .inSeconds.toDouble() / 60;
+      double timeUsedSince =
+          now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
       if (name == _lastUsedApp) {
         if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
           if (timeUsedSince / now.minute > 1) {
@@ -181,6 +187,7 @@ class SentenceLogger {
 
   void addAppIcon(String name, Uint8List icon) {
     _appIcons.add(name);
-    Isolate.spawn(SentimentDB.addAppIcon, AddAppIconRequest(name, icon, _iso.connectPort));
+    Isolate.spawn(SentimentDB.addAppIcon,
+        AddAppIconRequest(name, icon, _iso.connectPort));
   }
 }
