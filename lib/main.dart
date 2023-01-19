@@ -183,6 +183,8 @@ class HourlyDashboard extends ConsumerWidget {
         }
       }
     });
+    var baseColour = Theme.of(context).scaffoldBackgroundColor;
+    var settingsBG = baseColour.withRed(baseColour.red - 5).withBlue(baseColour.blue - 5).withGreen(baseColour.green - 5);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -215,6 +217,7 @@ class HourlyDashboard extends ConsumerWidget {
               icon: const Icon(Icons.pie_chart)),
           PopupMenuButton<String>(
               onSelected: handleMenu,
+              color: settingsBG,
               itemBuilder: (context) {
                 return {'Export', 'Settings', 'Stop and Exit'}
                     .map((String choice) {
