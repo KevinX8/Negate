@@ -20,17 +20,27 @@ class CommonUI {
         title: const Text("Info Page"),
       ),
       body: Center(
-          child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: const Text('Welcome to Negate! This app uses sentiment analysis '
-            'along with the messages you type to create a positivity profile '
-            'for all the apps you use in your day to day life.\nThe hourly dashboard '
-            'shows an hour by hour breakdown of each apps positivity scores, along '
-            'with an overall average for that hour shown in the bar chart.\n'
-            'The Recommendations section shows you the top 5 apps which have had the most '
-            'negative effect on your mood in the past week and the top 5 with the most positive impact, you can use this information'
-            'to gauge which apps to avoid using and which ones help improve your mood, however this is only a recommendation.'),
-      )),
+          child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(children: const <Widget>[
+                Text('\nWelcome to Negate! This app uses sentiment analysis '
+                    'along with the messages you type to create a positivity profile '
+                    'for all the apps you use in your day to day life.\n'),
+                Text('Dashboard',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 38)),
+                Text(
+                    '\nThe hourly dashboard shows an hour by hour breakdown of each apps positivity scores, along '
+                    'with an overall average for that hour shown in the bar chart.\n'),
+                Icon(Icons.analytics),
+                Text(
+                    '\nThe recommendations section shows you the top 5 apps which have had the most '
+                    'negative effect on your mood in the past week and the top 5 with the most positive impact, you can use this information'
+                    'to gauge which apps to avoid using and which ones help improve your mood, however this is only a recommendation.\n'),
+                Icon(Icons.pie_chart),
+                Text(
+                    '\nThe daily breakdown shows an overall breakdown of each day summarised by how each app affected you throughout the day.'),
+              ]))),
       persistentFooterButtons: [
         TextButton(
             style: TextButton.styleFrom(
@@ -111,10 +121,14 @@ class CommonUI {
               child: const Text('Accept'),
               onPressed: () {
                 pref.setBool('accepted_privacy', true);
-                Navigator.of(context).pop();
                 if (Platform.isAndroid) {
                   AndroidLogger().startAccessibility();
                 }
+                Navigator.pop(context);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CommonUI.infoPage(context)));
               },
             ),
           ],

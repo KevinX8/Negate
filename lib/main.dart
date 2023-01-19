@@ -182,10 +182,6 @@ class HourlyDashboard extends ConsumerWidget {
           !_requested) {
         _requested = true;
         CommonUI.showDisclosure(context, pref);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => CommonUI.infoPage(context)));
       } else {
         if (Platform.isAndroid && !_requested) {
           _requested = true;

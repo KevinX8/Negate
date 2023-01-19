@@ -11,7 +11,10 @@
    <application
         android:label="Negate"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher_round">
+        android:icon="@mipmap/ic_launcher_round"
+        android:hasFragileUserData="true"
+        android:allowBackup="true"
+        tools:targetApi="q">
         <activity
             android:name=".MainActivity"
             android:exported="true"
