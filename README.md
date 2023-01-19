@@ -1,16 +1,16 @@
-# negate
+# Negate
 
 Mental Mood Tracking
 
-## Getting Started
+## What is Negate?
+Negate is a powerful Mental Mood Tracking tool that makes use of Sentiment Analysis and Artificial Intelligence along with your behaviour in apps to figure out which apps are affecting your day-to-day life the most!
 
-This project is a starting point for a Flutter application.
+See the Top 5 most negatively impactful apps in the past 7 days in the recommendations section and make a change to improve the relationship you have with technology and the apps you use.
 
-A few resources to get you started if this is your first Flutter project:
+Show an hour-by-hour breakdown of how each app is affecting your mood and the overall mood detected for that hour to help better determine how to improve your mental state by seeing which apps are helping and which ones are not.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Display an overall breakdown of each day summarised by how each app affected you throughout the day in the Pie Chart section of the app.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Try Negate today and see how it can help you in your mental health journey!
+
+[![Google Play link](https://raw.githubusercontent.com/steverichey/google-play-badge-svg/master/img/en_get.svg)](https://play.google.com/store/apps/details?id=com.kevinx8.negate)
