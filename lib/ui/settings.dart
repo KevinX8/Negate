@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:negate/logger/logger_factory.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,6 +20,8 @@ class SettingsPage {
               if (prefs.data == null) {
                 return const Text('Loading...');
               }
+              var textController = TextEditingController(
+                  text: prefs.data!.getString('blacklist'));
               return SettingsList(
                 lightTheme: theme,
                 darkTheme: theme,
@@ -76,20 +79,27 @@ class SettingsPage {
                               )),
                           title: const Text('Previous Sentiment Split:')),
                       SettingsTile(
-                          title: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 25),
-                              child: TextFormField(
-                                initialValue:
-                                    prefs.data!.getString('blacklist'),
-                                onChanged: (regex) {
-                                  prefs.data?.setString('blacklist', regex);
-                                },
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'App Blacklist Regex',
-                                ),
-                              )))
+                          title: TextFormField(
+                            controller: textController,
+                            onChanged: (regex) {
+                              prefs.data?.setString('blacklist', regex);
+                            },
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'App Blacklist Regex',
+                            ),
+                          ),
+                          description: OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                textController.text =
+                                    LoggerFactory.getLoggerRegex().pattern;
+                                prefs.data?.setString('blacklist',
+                                    LoggerFactory.getLoggerRegex().pattern);
+                              });
+                            },
+                            child: const Text('Reset Default'),
+                          ))
                     ],
                   ),
                 ],
