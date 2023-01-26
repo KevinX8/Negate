@@ -14,6 +14,8 @@ import 'package:negate/logger/android_logger.dart';
 import 'globals.dart';
 
 class CommonUI {
+  static bool firstPage = true;
+
   static Widget infoPage(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -56,83 +58,104 @@ class CommonUI {
 
   static Future<void> showDisclosure(
       BuildContext context, SharedPreferences pref) async {
-    Text endText = const Text('Do you accept these terms?');
+    Text endText = const Text(
+        'The next page details the privacy policy on how your data is processed.');
     Text startText = const Text('This app tracks the text of messages '
         'and what app is currently in use.');
     if (Platform.isAndroid) {
-      endText = const Text(
-          'Do you accept these terms and allow use of the Accessibility API?');
       startText = const Text('This app makes use of the Accessibility API, '
           'which allows it to track the text of messages and what app is currently in use.');
     }
+    var firstPage = ListBody(
+      children: <Widget>[
+        startText,
+        const Text(
+            'The text is processed as specified in the privacy policy and used to generate '
+            'sentiment scores for the apps currently in use. The details of the current app '
+            'in use are required for the generation of a sentiment profile for each app as '
+            'not every app that influences your mood contains messaging features.'),
+        const Text(
+            'None of this data is sent or received online, all processing'
+            ' is done locally on device.'),
+        endText
+      ],
+    );
+    var secondPage = ListBody(
+      children: const [
+        Text("Privacy Policy",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+        Text(
+            "This is the privacy policy applicable to all platform versions of the Negate Application. "
+            "Data collection is defined as the transmission of any user data off of the user's device to a remote server. "
+            "All data used in the application is stored on device in a secure location and is never transmitted or collected."),
+        Text("Logging of Message Sentiment Scores",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+        Text(
+            "Negate (The application) and I (The Developer) do not collect any data while the application is in use. "
+            "Messages are defined as all sentences typed in any application while Negate is running. "
+            "Your messages are processed on device using TensorFlow lite without the use of any online resources. "
+            "The sentiment scores produced by TensorFlow lite are stored in a local database only accessible by the application itself. "
+            "The text of the messages is never stored and disposed of as soon as the score is generated. "),
+        Text("Logging of Applications Used",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+        Text(
+            "The applications you have used are also logged for the purposes of tracking what applications have influenced your mood. "),
+      ],
+    );
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return AlertDialog(
-          scrollable: true,
-          title: const Text('Privacy Disclosure'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                startText,
-                const Text(
-                    'The text is processed as specified in the privacy policy and used to generate '
-                    'sentiment scores for the apps currently in use. The details of the current app '
-                    'in use are required for the generation of a sentiment profile for each app as '
-                    'not every app that influences your mood contains messaging features.'),
-                const Text(
-                    'None of this data is sent or received online, all processing'
-                    ' is done locally on device. For more info tap the Policy button'),
-                endText
-              ],
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            scrollable: true,
+            title: const Text('Privacy Disclosure'),
+            content: SingleChildScrollView(
+              child: CommonUI.firstPage ? firstPage : secondPage,
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
+            actions: <Widget>[
+              TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                    textStyle: const TextStyle(fontSize: 20),
+                  ),
+                  onPressed: () {
+                    if (Platform.isAndroid) {
+                      SystemNavigator.pop();
+                    } else {
+                      exit(0);
+                    }
+                  },
+                  child: const Text('Exit')),
+              TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.secondary,
                   textStyle: const TextStyle(fontSize: 20),
                 ),
+                child: CommonUI.firstPage
+                    ? const Text('Next')
+                    : const Text('Accept'),
                 onPressed: () {
-                  if (Platform.isAndroid) {
-                    SystemNavigator.pop();
-                  } else {
-                    exit(0);
+                  if (CommonUI.firstPage) {
+                    setState(() {
+                      CommonUI.firstPage = false;
+                    });
+                    return;
                   }
+                  pref.setBool('accepted_privacy', true);
+                  if (Platform.isAndroid) {
+                    AndroidLogger().startAccessibility();
+                  }
+                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => CommonUI.infoPage(context)));
                 },
-                child: const Text('Exit')),
-            TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.secondary,
-                  textStyle: const TextStyle(fontSize: 20),
-                ),
-                onPressed: () {
-                  final Uri url = Uri.parse(
-                      'https://kevinx8.github.io/Negate/Privacy-Policy.md');
-                  launchUrl(url);
-                },
-                child: const Text('Policy')),
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.secondary,
-                textStyle: const TextStyle(fontSize: 20),
               ),
-              child: const Text('Accept'),
-              onPressed: () {
-                pref.setBool('accepted_privacy', true);
-                if (Platform.isAndroid) {
-                  AndroidLogger().startAccessibility();
-                }
-                Navigator.pop(context);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => CommonUI.infoPage(context)));
-              },
-            ),
-          ],
-        );
+            ],
+          );
+        });
       },
     );
   }
