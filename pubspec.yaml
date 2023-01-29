@@ -40,7 +40,7 @@ dependencies:
   ffi: ^2.0.1
   path_provider: ^2.0.11
   path: ^1.8.2
-  drift: ^2.4.1
+  drift: ^2.4.0
   flutter_riverpod: ^2.1.1
   get_it: ^7.2.0
   sqlite3: ^1.9.1
@@ -52,7 +52,7 @@ dependencies:
   flutter_foreground_task: ^3.10.0
   flutter_accessibility_service: ^0.2.2
   device_apps: ^2.2.0
-  fl_chart: ^0.55.2
+  fl_chart: ^0.60.0
   system_tray: ^2.0.2
   bitsdojo_window: ^0.1.5
   permission_handler: ^10.2.0
@@ -64,9 +64,9 @@ dependencies:
   settings_ui: ^2.0.2
 
 dev_dependencies:
-  drift_dev: ^2.4.1
+  drift_dev: ^2.4.0
   flutter_launcher_icons: ^0.11.0
-  build_runner: ^2.3.2
+  build_runner: ^2.3.3
   flutter_test:
     sdk: flutter
 
