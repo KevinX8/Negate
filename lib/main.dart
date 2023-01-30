@@ -153,12 +153,11 @@ class ThemedHourlyUI extends StatelessWidget {
       return MaterialApp(
           title: 'Negate Mental Health Tracker',
           theme: ThemeData(
-              colorScheme: light,
-              scaffoldBackgroundColor: dynamicCheck ? light.background : null,
+              colorSchemeSeed: light.primary,
               useMaterial3: true),
           darkTheme: ThemeData(
-              colorScheme: dark,
-              scaffoldBackgroundColor: dynamicCheck ? dark.background : null,
+              colorSchemeSeed: dark.primary,
+              brightness: Brightness.dark,
               useMaterial3: true),
           themeMode: ThemeMode.system,
           home: home);
@@ -323,7 +322,6 @@ class HourlyDashboard extends ConsumerWidget {
       persistentFooterButtons: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.secondary,
             padding: const EdgeInsets.all(16.0),
             textStyle: const TextStyle(fontSize: 20),
           ),

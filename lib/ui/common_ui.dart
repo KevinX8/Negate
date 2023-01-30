@@ -46,7 +46,6 @@ class CommonUI {
       persistentFooterButtons: [
         TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.secondary,
               padding: const EdgeInsets.all(16.0),
               textStyle: const TextStyle(fontSize: 20),
             ),
@@ -116,7 +115,6 @@ class CommonUI {
             actions: <Widget>[
               TextButton(
                   style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.secondary,
                     textStyle: const TextStyle(fontSize: 20),
                   ),
                   onPressed: () {
@@ -129,7 +127,6 @@ class CommonUI {
                   child: const Text('Exit')),
               TextButton(
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.secondary,
                   textStyle: const TextStyle(fontSize: 20),
                 ),
                 child: CommonUI.firstPage
@@ -166,10 +163,7 @@ class CommonUI {
     return ButtonBar(
       alignment: MainAxisAlignment.center,
       children: <Widget>[
-        ElevatedButton(
-          style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(
-                  Theme.of(context).colorScheme.secondary)),
+        FilledButton(
           onPressed: () {
             selectedDate = selectedDate.subtract(const Duration(days: 1));
             if (setState != null) {
@@ -180,14 +174,10 @@ class CommonUI {
               ref.read(dbProvider.notifier).set(slog);
             }, onError: (err, stk) => log(err));
           },
-          child: Icon(Icons.chevron_left_rounded,
-              color: Theme.of(context).primaryColor),
+          child: const Icon(Icons.chevron_left_rounded),
         ),
         Text(DateFormat.yMMMd().format(selectedDate)),
-        ElevatedButton(
-          style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(
-                  Theme.of(context).colorScheme.secondary)),
+        FilledButton(
           onPressed: () {
             var now = DateTime.now();
             var midnight = DateTime(now.year, now.month, now.day);
@@ -204,8 +194,7 @@ class CommonUI {
               ref.read(dbProvider.notifier).set(slog);
             }, onError: (err, stk) => log(err));
           },
-          child: Icon(Icons.chevron_right_rounded,
-              color: Theme.of(context).primaryColor),
+          child: const Icon(Icons.chevron_right_rounded),
         ),
       ],
     );
