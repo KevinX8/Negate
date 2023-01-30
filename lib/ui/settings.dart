@@ -4,7 +4,6 @@ import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage {
-  static int _sliderState = 75;
 
   static Widget build(BuildContext context, StateSetter setState) {
     var theme = SettingsThemeData(
@@ -44,40 +43,6 @@ class SettingsPage {
                   SettingsSection(
                     title: const Text('DEVELOPER SETTINGS: Sentiment'),
                     tiles: <SettingsTile>[
-                      SettingsTile.switchTile(
-                          activeSwitchColor:
-                              Theme.of(context).colorScheme.primary,
-                          initialValue:
-                              prefs.data?.getBool('average_sentiment'),
-                          onToggle: (value) => setState(() {
-                                prefs.data?.setBool('average_sentiment', value);
-                              }),
-                          title: const Text('Use Average')),
-                      SettingsTile(
-                          description: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 25),
-                              child: Slider(
-                                min: 0,
-                                max: 100,
-                                divisions: 8,
-                                label: "${_sliderState.toString()}%",
-                                value: prefs.data?.getDouble(
-                                            'multiplier_sentiment') !=
-                                        null
-                                    ? prefs.data!.getDouble(
-                                            'multiplier_sentiment')! *
-                                        100
-                                    : 75,
-                                onChanged: (double value) {
-                                  setState(() {
-                                    _sliderState = value.toInt();
-                                    prefs.data!.setDouble(
-                                        'multiplier_sentiment', value / 100);
-                                  });
-                                },
-                              )),
-                          title: const Text('Previous Sentiment Split:')),
                       SettingsTile(
                           title: TextFormField(
                             controller: textController,

@@ -269,18 +269,18 @@ packages:
     dependency: "direct main"
     description:
       name: drift
-      sha256: b8465fb684bae76ac98e102d831625bff32c0e802db38d9edff0fe338d915fd4
+      sha256: "2a16754641485ca4eaf31bb7961f3ec26bcddad1ce4869a37f238791e164c073"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.2"
+    version: "2.5.0"
   drift_dev:
     dependency: "direct dev"
     description:
       name: drift_dev
-      sha256: b237a939e9b4c55178187dacc78075e34184a0d6a3b2a7672fecc80a36dcf8f4
+      sha256: "34dd513d0444dcd78dd935db491a65f05c082b448e926d46b2576a898d41ace3"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.5.0+1"
   dynamic_color:
     dependency: "direct main"
     description:
@@ -865,10 +865,10 @@ packages:
     dependency: transitive
     description:
       name: sqlparser
-      sha256: "2740266bc5b200a71b52296b05985fd9b79cab41f510620d2f42dffab5875123"
+      sha256: "91f47610aa54d8abf9d795a7b4e49b2a788f65d7493d5a68fbf180c3cbcc6f38"
       url: "https://pub.dev"
     source: hosted
-    version: "0.26.1"
+    version: "0.27.0"
   stack_trace:
     dependency: transitive
     description:
@@ -1087,5 +1087,5 @@ packages:
     source: hosted
     version: "3.1.1"
 sdks:
-  dart: ">=2.18.2 <4.0.0"
+  dart: ">=2.19.0 <4.0.0"
   flutter: ">=3.3.0"

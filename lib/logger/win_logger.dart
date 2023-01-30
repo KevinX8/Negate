@@ -11,6 +11,7 @@ class WinLogger extends SentenceLogger {
   static final WinLogger _instance = WinLogger.init();
   static int _keyHook = 0;
   static int _mouseHook = 0;
+  static DateTime _lastLogged = DateTime.now();
 
   factory WinLogger() {
     return _instance;
@@ -64,7 +65,11 @@ class WinLogger extends SentenceLogger {
     }
 
     if (keyStroke == 13) {
-      addAppEntry();
+      if (_lastLogged.difference(DateTime.now()).inSeconds > 10) {
+        clearSentence();
+      } else {
+        addAppEntry();
+      }
     } else if (keyStroke == 8) {
       var temp = getSentence().substring(0, getSentence().length - 1);
       clearSentence();
@@ -74,6 +79,7 @@ class WinLogger extends SentenceLogger {
       key = !lowercase ? key.toLowerCase() : key;
       writeToSentence(key);
     }
+    _lastLogged = DateTime.now();
   }
 
   void _setHook() {

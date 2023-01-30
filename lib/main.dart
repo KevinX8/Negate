@@ -14,7 +14,7 @@ import 'package:negate/sentiment_analysis.dart';
 import 'package:negate/sentiment_db.dart';
 
 import 'package:drift/isolate.dart';
-import 'package:flutter/material.dart' hide MenuItem;
+import 'package:flutter/material.dart';
 import 'package:negate/ui/daily_breakdown.dart';
 import 'package:negate/ui/settings.dart';
 import 'package:path_provider/path_provider.dart';
@@ -189,11 +189,6 @@ class HourlyDashboard extends ConsumerWidget {
         }
       }
     });
-    var baseColour = Theme.of(context).scaffoldBackgroundColor;
-    var settingsBG = baseColour
-        .withRed(baseColour.red - 5)
-        .withBlue(baseColour.blue - 5)
-        .withGreen(baseColour.green - 5);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -227,7 +222,6 @@ class HourlyDashboard extends ConsumerWidget {
               icon: const Icon(Icons.pie_chart)),
           PopupMenuButton<String>(
               onSelected: handleMenu,
-              color: settingsBG,
               itemBuilder: (context) {
                 return {'Export', 'Settings', 'Stop and Exit'}
                     .map((String choice) {

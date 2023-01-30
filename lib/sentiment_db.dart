@@ -194,7 +194,8 @@ class SentimentDB extends _$SentimentDB {
             hour: Value(
                 log.value.lastTimeUsed.alignDateTime(const Duration(hours: 1))),
             timeUsed: Value(log.value.totalTimeUsed.ceil()),
-            avgScore: Value(log.value.avgScore));
+            avgScore: Value(log.value.numPositive /
+                (log.value.numPositive + log.value.numNegative)));
         logs.add(entry);
       }
       batch.insertAllOnConflictUpdate(sdb.sentimentLogs, logs);

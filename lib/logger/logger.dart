@@ -13,10 +13,10 @@ import '../sentiment_analysis.dart';
 class AppList {
   DateTime lastTimeUsed;
   double totalTimeUsed;
-  double avgScore;
-  int numCalled;
+  int numPositive = 0;
+  int numNegative = 0;
 
-  AppList(this.lastTimeUsed, this.totalTimeUsed, this.avgScore, this.numCalled);
+  AppList(this.lastTimeUsed, this.totalTimeUsed, this.numPositive, this.numNegative);
 }
 
 class SentenceLogger {
@@ -31,7 +31,6 @@ class SentenceLogger {
       RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
   String _lastUsedApp = "";
   bool _dbUpdated = false;
-  double? _multiplier;
 
   factory SentenceLogger() {
     return _instance;
@@ -67,9 +66,6 @@ class SentenceLogger {
     );
 
     var prefs = request.prefs;
-    if (prefs.getBool('average_sentiment')!) {
-      _multiplier = prefs.getDouble('multiplier_sentiment')!;
-    }
     if (prefs.getString('blacklist') != null) {
       blacklist = RegExp(prefs.getString('blacklist')!);
     }
@@ -112,38 +108,37 @@ class SentenceLogger {
         element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
       if (app.key == name) continue;
-      if (_multiplier == null) {
-        app.value.avgScore =
-            ((app.value.avgScore * app.value.numCalled) + score) /
-                (++app.value.numCalled);
-      } else {
-        app.value.avgScore =
-            (app.value.avgScore * _multiplier!) + (score * (1 - _multiplier!));
+        if (score > 0.45) {
+          app.value.numPositive++;
+        } else {
+          app.value.numNegative++;
+        }
       }
-    }
 
     if (_appMap.containsKey(name)) {
+      var app = _appMap[name]!;
       double timeUsedSince =
-          now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
-      double totalTimeUsed = _appMap[name]!.totalTimeUsed + timeUsedSince;
-      double avgScore =
-          ((_appMap[name]!.avgScore * _appMap[name]!.numCalled) + score) /
-              (_appMap[name]!.numCalled + 1);
-
+          now.difference(app.lastTimeUsed).inSeconds.toDouble() / 60;
+      double totalTimeUsed = app.totalTimeUsed + timeUsedSince;
+      if (score > 0.45) {
+        app.numPositive++;
+      } else {
+        app.numNegative++;
+      }
       //If the next hour has been reached reset the average score and time used
-      if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
-        avgScore = score;
+      if (now.hour != app.lastTimeUsed.hour) {
+        app.numNegative = 1;
+        app.numPositive = 1;
         if (timeUsedSince / now.minute > 1) {
           totalTimeUsed = now.minute.toDouble();
         } else {
           totalTimeUsed = timeUsedSince;
         }
-        _appMap[name]!.numCalled = 0;
       }
-      _appMap[name] =
-          AppList(now, totalTimeUsed, avgScore, _appMap[name]!.numCalled + 1);
+      app.lastTimeUsed = now;
+      app.totalTimeUsed = totalTimeUsed;
     } else {
-      _appMap.putIfAbsent(name, () => AppList(now, 0, score, 1));
+      _appMap.putIfAbsent(name, () => AppList(now, 0, 1, 1));
     }
 
     if (now.minute % _updateFreq == 0 && !_dbUpdated) {
@@ -175,7 +170,7 @@ class SentenceLogger {
       }
       _appMap[name]!.lastTimeUsed = now;
     } else {
-      _appMap.putIfAbsent(name, () => AppList(now, 0, 0.5, 1));
+      _appMap.putIfAbsent(name, () => AppList(now, 0, 1, 1));
     }
     _lastUsedApp = name;
   }
