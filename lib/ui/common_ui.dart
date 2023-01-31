@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:negate/logger/logger_factory.dart';
 import 'package:negate/sentiment_db.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,29 +58,8 @@ class CommonUI {
 
   static Future<void> showDisclosure(
       BuildContext context, SharedPreferences pref) async {
-    Text endText = const Text(
-        'The next page details the privacy policy on how your data is processed.');
-    Text startText = const Text('This app tracks the text of messages '
-        'and what app is currently in use.');
-    if (Platform.isAndroid) {
-      startText = const Text('This app makes use of the Accessibility API, '
-          'which allows it to track the text of messages and what app is currently in use.');
-    }
-    var firstPage = ListBody(
-      children: <Widget>[
-        startText,
-        const Text(
-            'The text is processed as specified in the privacy policy and used to generate '
-            'sentiment scores for the apps currently in use. The details of the current app '
-            'in use are required for the generation of a sentiment profile for each app as '
-            'not every app that influences your mood contains messaging features.'),
-        const Text(
-            'None of this data is sent or received online, all processing'
-            ' is done locally on device.'),
-        endText
-      ],
-    );
-    var secondPage = ListBody(
+    var firstPage = LoggerFactory.getDisclosureText(context);
+    var secondPage = SingleChildScrollView(child: ListBody(
       children: const [
         Text("Privacy Policy",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
@@ -100,7 +80,7 @@ class CommonUI {
         Text(
             "The applications you have used are also logged for the purposes of tracking what applications have influenced your mood. "),
       ],
-    );
+    ));
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
@@ -109,9 +89,7 @@ class CommonUI {
           return AlertDialog(
             scrollable: true,
             title: const Text('Privacy Disclosure'),
-            content: SingleChildScrollView(
-              child: CommonUI.firstPage ? firstPage : secondPage,
-            ),
+            content: CommonUI.firstPage ? firstPage : secondPage,
             actions: <Widget>[
               TextButton(
                   style: TextButton.styleFrom(
