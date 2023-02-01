@@ -221,8 +221,7 @@ class HourlyDashboard extends ConsumerWidget {
           PopupMenuButton<String>(
               onSelected: handleMenu,
               itemBuilder: (context) {
-                return {'Export', 'Settings', 'Stop and Exit'}
-                    .map((String choice) {
+                return {'Settings', 'Stop and Exit'}.map((String choice) {
                   return PopupMenuItem<String>(
                       value: choice, child: Text(choice));
                 }).toList();
@@ -426,27 +425,6 @@ class HourlyDashboard extends ConsumerWidget {
 
   void handleMenu(String value) async {
     switch (value) {
-      case 'Export':
-        if (Platform.isIOS || Platform.isAndroid || Platform.isMacOS) {
-          bool status = await Permission.storage.isGranted;
-
-          if (!status) await Permission.storage.request();
-        }
-        const String fileName = 'sentiment_logs';
-        var sdb = getIt<SentimentDB>.call();
-        var logs = await sdb.jsonLogs();
-        var logData = Uint8List.fromList(logs.codeUnits);
-        const MimeType mimeType = MimeType.JSON;
-        String path = "";
-        if (Platform.isAndroid) {
-          path = await FileSaver.instance
-              .saveAs(fileName, logData, 'json', mimeType);
-        } else {
-          path = await FileSaver.instance
-              .saveFile(fileName, logData, 'json', mimeType: mimeType);
-        }
-        log(path);
-        break;
       case 'Settings':
         Navigator.push(
             _context,

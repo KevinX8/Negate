@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
@@ -61,10 +62,49 @@ class SentimentDB extends _$SentimentDB {
     return set;
   }
 
+  dynamic encoder(dynamic item) {
+    Map<String, dynamic> encodedItem = {};
+    if (item is SentimentLog) {
+      encodedItem['name'] = item.name;
+      encodedItem['hour'] = item.hour.toIso8601String();
+      encodedItem['timeUsed'] = item.timeUsed;
+      encodedItem['avgScore'] = item.avgScore;
+    }
+    return encodedItem;
+  }
+
+  dynamic reviver(dynamic key, dynamic value) {
+    if (key == 'hour') {
+      return DateTime.parse(value);
+    }
+    return value;
+  }
+
   Future<String> jsonLogs() async {
     var query = select(sentimentLogs);
     var res = await query.get();
-    return jsonEncode(res);
+    return jsonEncode(res, toEncodable: encoder);
+  }
+
+  Future<bool> jsonImport(String json) async {
+    try {
+      List<dynamic> res = jsonDecode(json, reviver: reviver);
+      List<SentimentLog> logs = [];
+      for (var entry in res) {
+        Map<String, dynamic> jsonEntry = entry as Map<String, dynamic>;
+        logs.add(SentimentLog(
+            name: jsonEntry['name'],
+            hour: jsonEntry['hour'],
+            timeUsed: jsonEntry['timeUsed'],
+            avgScore: jsonEntry['avgScore']));
+      }
+      await batch((batch) {
+        batch.insertAllOnConflictUpdate(sentimentLogs, logs);
+      });
+      return true;
+    } on FormatException catch (_) {
+      return false;
+    }
   }
 
   Future<List<MapEntry<String, List<double>>>> _getSentimentsByName(

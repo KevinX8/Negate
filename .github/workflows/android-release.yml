@@ -34,8 +34,8 @@ jobs:
       - name: Start release build
         run: flutter build apk --debug
 
-      - name: Upload Debug arm64
+      - name: Upload Debug
         uses: actions/upload-artifact@v2
         with:
           name: 'Negate Android'
-          path: "build/app/outputs/apk/debug/*.apk"
+          path: "build/app/outputs/apk/debug/app-debug.apk"

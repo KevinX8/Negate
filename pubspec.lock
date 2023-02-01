@@ -277,10 +277,10 @@ packages:
     dependency: "direct dev"
     description:
       name: drift_dev
-      sha256: "34dd513d0444dcd78dd935db491a65f05c082b448e926d46b2576a898d41ace3"
+      sha256: "5a0842b4bfa62f66ec149b55f00d8b1902114fa8ffed76fc1776ea3b2064974f"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.0+1"
+    version: "2.5.1"
   dynamic_color:
     dependency: "direct main"
     description:
@@ -321,6 +321,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.4"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      sha256: d090ae03df98b0247b82e5928f44d1b959867049d18d73635e2e0bc3f49542b9
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.5"
   file_saver:
     dependency: "direct main"
     description:
@@ -386,10 +394,18 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_markdown
-      sha256: "981442432b632237ffc1cf8092b4173b9e9f2278b5740637287c3069b51c8f09"
+      sha256: "818cf6c28377ba2c91ed283c96fd712e9c175dd2d2488eb7fc93b6afb9ad2e08"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.13"
+    version: "0.6.13+1"
+  flutter_plugin_android_lifecycle:
+    dependency: transitive
+    description:
+      name: flutter_plugin_android_lifecycle
+      sha256: "60fc7b78455b94e6de2333d2f95196d32cf5c22f4b0b0520a628804cb463503b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.7"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -780,10 +796,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_foundation
-      sha256: "1ffa239043ab8baf881ec3094a3c767af9d10399b2839020b9e4d44c0bb23951"
+      sha256: "2b55c18636a4edc529fa5cd44c03d3f3100c00513f518c5127c951978efcccd0"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.2"
+    version: "2.1.3"
   shared_preferences_ios:
     dependency: transitive
     description:
@@ -849,10 +865,10 @@ packages:
     dependency: transitive
     description:
       name: source_gen
-      sha256: "2d79738b6bbf38a43920e2b8d189e9a3ce6cc201f4b8fc76be5e4fe377b1c38d"
+      sha256: c2bea18c95cfa0276a366270afaa2850b09b4a76db95d546f3d003dcc7011298
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.6"
+    version: "1.2.7"
   source_span:
     dependency: transitive
     description:
