@@ -49,15 +49,15 @@ class AndroidLogger extends SentenceLogger {
         allowWifiLock: false,
       ),
     );
-    var status = await Permission.notification.request();
-    if (status.isGranted) {
+  }
+
+  Future<void> startAccessibility() async {
+    var statusNotify = await Permission.notification.request();
+    if (statusNotify.isGranted) {
       FlutterForegroundTask.startService(
           notificationTitle: "Sentiment Tracker",
           notificationText: "Analyzing sentence sentiment");
     }
-  }
-
-  Future<void> startAccessibility() async {
     bool status =
         await FlutterAccessibilityService.isAccessibilityPermissionEnabled();
     if (!status) {

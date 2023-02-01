@@ -116,7 +116,8 @@ class ThemedHourlyUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget home = HourlyDashboard();
-    if (!Platform.isAndroid) {
+    if ((Platform.isWindows || Platform.isLinux || Platform.isMacOS) &&
+        !Platform.environment.containsKey('FLUTTER_TEST')) {
       home = Column(
         children: [
           WindowButtons(),
@@ -152,9 +153,7 @@ class ThemedHourlyUI extends StatelessWidget {
       }
       return MaterialApp(
           title: 'Negate Mental Health Tracker',
-          theme: ThemeData(
-              colorSchemeSeed: light.primary,
-              useMaterial3: true),
+          theme: ThemeData(colorSchemeSeed: light.primary, useMaterial3: true),
           darkTheme: ThemeData(
               colorSchemeSeed: dark.primary,
               brightness: Brightness.dark,

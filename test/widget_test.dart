@@ -6,25 +6,34 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 import 'package:negate/main.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/ui/globals.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Date Changer Test', (WidgetTester tester) async {
+    var sdb = SentimentDB();
+    getIt.registerSingleton<SentimentDB>(sdb);
+    getIt.registerSingleton<bool>(true);
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const HourlyDashboard());
+    await tester.pumpWidget(const ProviderScope(child: ThemedHourlyUI()));
+    var now = DateTime.now();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that app opens on current date and time
+    expect(find.text('Positivity scores for ${DateFormat.j().format(now)}'), findsOneWidget);
+    expect(find.text(DateFormat.yMMMd().format(now)), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Tap the '<' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that date changed to the day before.
+    expect(
+        find.text(DateFormat.yMMMd().format(now.subtract(Duration(days: 1)))),
+        findsNothing);
   });
 }
