@@ -90,15 +90,15 @@ class SentenceLogger {
     SentenceLogger._sentence.clear();
   }
 
-  void addAppEntry() {
+  void addAppEntry() async {
     log(getSentence());
     if (getSentence().length < 6) {
       clearSentence();
       return;
     }
     String name = _lastUsedApp;
-    var analyser = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict);
-    double score = analyser.classify(getSentence());
+    var analyser = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict, _tfp.translate);
+    double score = await analyser.classify(getSentence());
     log(score.toString());
     clearSentence();
 
