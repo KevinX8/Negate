@@ -48,6 +48,20 @@ class SettingsPage {
                           title: const Text('Use Dynamic Theme')),
                     ],
                   ),
+                  SettingsSection(
+                      title: const Text('Translation'),
+                      tiles: <SettingsTile>[
+                        SettingsTile.switchTile(
+                            activeSwitchColor:
+                            Theme.of(context).colorScheme.primary,
+                            leading: const Icon(Icons.format_paint),
+                            initialValue: prefs.data?.getBool('translate'),
+                            onToggle: (value) => setState(() {
+                              prefs.data?.setBool('translate', value);
+                            }),
+                            title: const Text('Use Google Translate for non-english text')),
+                      ]
+                  ),
                   SettingsSection(title: const Text('Database'), tiles: <
                       SettingsTile>[
                     SettingsTile.navigation(

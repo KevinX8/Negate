@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:file_saver/file_saver.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -20,7 +19,6 @@ import 'package:negate/ui/settings.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -38,11 +36,28 @@ Future<void> main() async {
   final dbString = p.join(dbFolder.path, 'db.sqlite');
   final rPort = ReceivePort();
 
+  var prefs = await SharedPreferences.getInstance();
+  int translate = 0;
   var analyser = SentimentAnalysis();
   await analyser.init();
-  var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary);
+  if (prefs.getBool('translate') == null) {
+    final List<Locale> systemLocales = WidgetsBinding.instance.window.locales;
+    log(systemLocales.toString());
+    if (systemLocales.length > 1 || systemLocales.where((locale) => !locale.languageCode.contains('en')).isNotEmpty) {
+      prefs.setBool('translate', true);
+    }
+  } else {
+    if (prefs.getBool('translate')!) {
+      if (Platform.isAndroid || Platform.isIOS) {
+        translate = 2;
+      } else {
+        //Desktop translation not implemented
+        translate = 1;
+      }
+    }
+  }
+  var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary, translate);
 
-  var prefs = await SharedPreferences.getInstance();
   if (prefs.getBool('dynamic_theme') == null) {
     prefs.setBool('dynamic_theme', true);
     getIt.registerSingleton<bool>(true);
@@ -58,7 +73,7 @@ Future<void> main() async {
   prefs.getString('blacklist') == null
       ? prefs.setString('blacklist', LoggerFactory.getLoggerRegex().pattern)
       : null;
-
+  
   if (Platform.isAndroid || Platform.isIOS) {
     LoggerFactory.startLoggerFactory(
         TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
