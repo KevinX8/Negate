@@ -90,15 +90,42 @@ class SentenceLogger {
     SentenceLogger._sentence.clear();
   }
 
-  void addAppEntry() {
+  void _setAppValues(DateTime now, AppList app, double score, {bool used = true}) {
+    double timeUsedSince =
+        now.difference(app.lastTimeUsed).inSeconds.toDouble() / 60;
+    double totalTimeUsed = app.totalTimeUsed + timeUsedSince;
+    if (score > 0.45) {
+      app.numPositive++;
+    } else {
+      app.numNegative++;
+    }
+    bool newHour = false;
+    //If the next hour has been reached reset the average score and time used
+    if (now.hour != app.lastTimeUsed.hour) {
+      app.numNegative = 1;
+      app.numPositive = 1;
+      if (timeUsedSince / now.minute > 1) {
+        totalTimeUsed = now.minute.toDouble();
+      } else {
+        totalTimeUsed = timeUsedSince;
+      }
+      newHour = true;
+    }
+    if (used || newHour) {
+      app.lastTimeUsed = now;
+      app.totalTimeUsed = totalTimeUsed;
+    }
+  }
+
+  void addAppEntry() async {
     log(getSentence());
     if (getSentence().length < 6) {
       clearSentence();
       return;
     }
     String name = _lastUsedApp;
-    var analyser = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict);
-    double score = analyser.classify(getSentence());
+    var analyser = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict, _tfp.translate);
+    double score = await analyser.classify(getSentence());
     log(score.toString());
     clearSentence();
 
@@ -107,36 +134,13 @@ class SentenceLogger {
     var appsInPeriod = _appMap.entries.where((element) =>
         element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
-      if (app.key == name) continue;
-        if (score > 0.45) {
-          app.value.numPositive++;
-        } else {
-          app.value.numNegative++;
-        }
+        if (app.key == name) continue;
+        _setAppValues(now, app.value, score, used: false);
       }
 
     if (_appMap.containsKey(name)) {
       var app = _appMap[name]!;
-      double timeUsedSince =
-          now.difference(app.lastTimeUsed).inSeconds.toDouble() / 60;
-      double totalTimeUsed = app.totalTimeUsed + timeUsedSince;
-      if (score > 0.45) {
-        app.numPositive++;
-      } else {
-        app.numNegative++;
-      }
-      //If the next hour has been reached reset the average score and time used
-      if (now.hour != app.lastTimeUsed.hour) {
-        app.numNegative = 1;
-        app.numPositive = 1;
-        if (timeUsedSince / now.minute > 1) {
-          totalTimeUsed = now.minute.toDouble();
-        } else {
-          totalTimeUsed = timeUsedSince;
-        }
-      }
-      app.lastTimeUsed = now;
-      app.totalTimeUsed = totalTimeUsed;
+      _setAppValues(now, app, score);
     } else {
       _appMap.putIfAbsent(name, () => AppList(now, 0, 1, 1));
     }
