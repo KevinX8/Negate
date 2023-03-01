@@ -1,8 +1,8 @@
+import 'package:flutter/material.dart';
+
 import 'package:negate/sentiment_db.dart';
 import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/globals.dart';
-
-import 'package:flutter/material.dart' hide MenuItem;
 
 class RecommendationsPage extends StatelessWidget {
   const RecommendationsPage({super.key});

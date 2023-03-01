@@ -5,13 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:negate/logger/logger_factory.dart';
-import 'package:negate/sentiment_db.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:negate/logger/android_logger.dart';
-
-import 'globals.dart';
+import 'package:negate/logger/logger_factory.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/ui/globals.dart';
 
 class CommonUI {
   // check if the user has moved to he next page

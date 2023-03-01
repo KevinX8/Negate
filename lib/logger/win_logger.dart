@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:negate/sentiment_db.dart';
-import 'package:negate/logger/logger.dart';
-import 'package:win32/win32.dart';
 import 'package:ffi/ffi.dart';
+import 'package:win32/win32.dart';
+
+import 'package:negate/logger/logger.dart';
+import 'package:negate/sentiment_db.dart';
 
 class WinLogger extends SentenceLogger {
   static final WinLogger _instance = WinLogger.init();

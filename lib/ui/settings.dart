@@ -4,13 +4,13 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
-import 'package:negate/logger/logger_factory.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../sentiment_db.dart';
-import 'globals.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/logger/logger_factory.dart';
+import 'package:negate/ui/globals.dart';
 
 class SettingsPage {
   static Widget build(BuildContext context, StateSetter setState) {

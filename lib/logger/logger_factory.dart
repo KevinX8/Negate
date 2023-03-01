@@ -3,9 +3,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-import '../sentiment_db.dart';
-import 'android_logger.dart';
-import 'win_logger.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/logger/android_logger.dart';
+import 'package:negate/logger/win_logger.dart';
 
 class LoggerFactory {
   // start the logger based on the platform

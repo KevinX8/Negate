@@ -1,33 +1,32 @@
-import 'dart:developer';
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:drift/isolate.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:local_notifier/local_notifier.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:system_tray/system_tray.dart';
+
 import 'package:negate/logger/android_logger.dart';
 import 'package:negate/logger/logger_factory.dart';
 import 'package:negate/sentiment_analysis.dart';
 import 'package:negate/sentiment_db.dart';
-
-import 'package:drift/isolate.dart';
-import 'package:flutter/material.dart';
+import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/daily_breakdown.dart';
-import 'package:negate/ui/settings.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:system_tray/system_tray.dart';
-import 'package:dynamic_color/dynamic_color.dart';
-
 import 'package:negate/ui/globals.dart';
 import 'package:negate/ui/recommendations.dart';
+import 'package:negate/ui/settings.dart';
 import 'package:negate/ui/window_decorations.dart';
-import 'package:negate/ui/common_ui.dart';
 
 Future<void> main() async {
   const loggerUI = ThemedHourlyUI();

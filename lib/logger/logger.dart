@@ -1,14 +1,14 @@
 import 'dart:collection';
-import 'dart:io';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:drift/isolate.dart';
-import 'package:negate/sentiment_db.dart';
+import 'package:drift/native.dart';
 
-import '../sentiment_analysis.dart';
+import 'package:negate/sentiment_db.dart';
+import 'package:negate/sentiment_analysis.dart';
 
 class AppList {
   DateTime lastTimeUsed;

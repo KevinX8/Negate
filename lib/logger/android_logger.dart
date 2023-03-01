@@ -5,9 +5,10 @@ import 'package:flutter_accessibility_service/accessibility_event.dart';
 import 'package:flutter_accessibility_service/constants.dart';
 import 'package:flutter_accessibility_service/flutter_accessibility_service.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import 'package:negate/logger/logger.dart';
 import 'package:negate/sentiment_db.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class AndroidLogger extends SentenceLogger {
   static final AndroidLogger _instance = AndroidLogger.init();

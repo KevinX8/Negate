@@ -3,10 +3,10 @@ import 'dart:typed_data';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/globals.dart';
-
-import '../sentiment_db.dart';
+import 'package:negate/sentiment_db.dart';
 
 class DailyBreakdown {
   static Widget dashboard(BuildContext context, SentimentDB sdb, WidgetRef ref,

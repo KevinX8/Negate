@@ -1,17 +1,16 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:drift/drift.dart';
 import 'package:drift/isolate.dart';
-import 'dart:io';
-
 import 'package:drift/native.dart';
-import 'package:negate/logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:negate/logger/logger.dart';
 
 part 'sentiment_db.g.dart';
 

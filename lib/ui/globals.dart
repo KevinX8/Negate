@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
-import '../sentiment_db.dart';
+import 'package:negate/sentiment_db.dart';
 
 // this is the provider that will be used to access the database
 // and update the UI every time it changes
