@@ -24,6 +24,7 @@ class SettingsPage {
         body: FutureBuilder<SharedPreferences>(
             future: SharedPreferences.getInstance(),
             builder: (context, prefs) {
+              // the future can be null in the first few calls
               if (prefs.data == null) {
                 return const Text('Loading...');
               }

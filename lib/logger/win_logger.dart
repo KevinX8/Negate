@@ -11,6 +11,7 @@ class WinLogger extends SentenceLogger {
   static final WinLogger _instance = WinLogger.init();
   static int _keyHook = 0;
   static int _mouseHook = 0;
+  // used to prevent logging keystrokes when the user is not typing
   static DateTime _lastLogged = DateTime.now();
 
   factory WinLogger() {
@@ -23,6 +24,8 @@ class WinLogger extends SentenceLogger {
   Future<void> startLogger(TfliteRequest request) async {
     await super.startLogger(request);
     _setHook();
+    // Keeps the app waiting for messages from the OS so that the hooks can be
+    // called
     final msg = calloc<MSG>();
     while (GetMessage(msg, NULL, 0, 0) != 0) {
       TranslateMessage(msg);
@@ -31,6 +34,7 @@ class WinLogger extends SentenceLogger {
   }
 
   static int _hookCallback(int nCode, int wParam, int lParam) {
+    // Only log keydown events
     if (nCode == HC_ACTION) {
       if (wParam == WM_KEYDOWN) {
         final kbs = Pointer<KBDLLHOOKSTRUCT>.fromAddress(lParam);
@@ -41,6 +45,7 @@ class WinLogger extends SentenceLogger {
   }
 
   static int _mouseCallback(int nCode, int wParam, int lParam) {
+    // log the app name and icon of whatever window is clicked on
     if (wParam == WM_LBUTTONDOWN) {
       var name = WinLogger()._getFGAppName();
       WinLogger().updateFGApp(name);
@@ -64,16 +69,22 @@ class WinLogger extends SentenceLogger {
       lowercase = !lowercase;
     }
 
+    // if the user presses enter, add the sentence to the database
     if (keyStroke == 13) {
+      // if the user presses enter within 10 seconds of the last time they
+      // pressed any key, add the sentence to the database, otherwise clear
       if (_lastLogged.difference(DateTime.now()).inSeconds > 10) {
         clearSentence();
       } else {
         addAppEntry();
       }
+      // if the user presses backspace, remove the last character from the
+      // sentence
     } else if (keyStroke == 8) {
       var temp = getSentence().substring(0, getSentence().length - 1);
       clearSentence();
       writeToSentence(temp);
+    // if the user presses left shift or right shift do nothing
     } else if (keyStroke != 161 && keyStroke != 160) {
       var key = String.fromCharCode(keyStroke);
       key = !lowercase ? key.toLowerCase() : key;
@@ -89,6 +100,7 @@ class WinLogger extends SentenceLogger {
         Pointer.fromFunction<CallWndProc>(_mouseCallback, 0), NULL, 0);
   }
 
+  // Gets the name of the app that is currently in focus
   String _getFGAppName() {
     int nChar = 256;
     Pointer<Utf16> sPtr = malloc.allocate<Utf16>(nChar);
@@ -102,10 +114,12 @@ class WinLogger extends SentenceLogger {
         sPtr.toDartString().substring(0, sPtr.toDartString().length - 4));
   }
 
+  // Formats the name of the app to be more readable
   String _formatName(String name) {
     return name[0].toUpperCase() + name.toLowerCase().substring(1);
   }
 
+  // Finds the icon of an app based on the window handle
   Uint8List? findAppIcon(int hWnd, {background = 0xffffff, hover = false}) {
     var icon =
         SendMessage(hWnd, WM_GETICON, 2, 0); // ICON_SMALL2 - User Made Apps
