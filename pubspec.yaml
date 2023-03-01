@@ -66,6 +66,7 @@ dependencies:
   file_picker: ^5.2.5
   google_mlkit_language_id: ^0.5.0
   google_mlkit_translation: ^0.5.0
+  local_notifier: ^0.1.5
 
 dev_dependencies:
   drift_dev: ^2.4.0

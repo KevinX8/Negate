@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_windows
   dynamic_color
   file_saver
+  local_notifier
   permission_handler_windows
   sqlite3_flutter_libs
   system_tray

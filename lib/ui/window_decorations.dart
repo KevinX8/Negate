@@ -1,5 +1,6 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
+import 'package:local_notifier/local_notifier.dart';
 
 class WindowButtons extends StatelessWidget {
   WindowButtons({Key? key}) : super(key: key);
@@ -29,26 +30,12 @@ class WindowButtons extends StatelessWidget {
             CloseWindowButton(
               colors: closeButtonColors,
               onPressed: () {
-                showDialog<void>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('Exit Program?'),
-                      content: const Text(
-                          ('The window will be hidden, to exit the program you can use the system menu.')),
-                      actions: <Widget>[
-                        TextButton(
-                          child: const Text('OK'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            appWindow.hide();
-                          },
-                        ),
-                      ],
-                    );
-                  },
+                appWindow.hide();
+                LocalNotification notification = LocalNotification(
+                  title: "Negate",
+                  body: "running in the background",
                 );
+                notification.show();
               },
             ),
           ],

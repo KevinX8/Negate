@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/intl.dart';
+import 'package:local_notifier/local_notifier.dart';
 import 'package:negate/logger/android_logger.dart';
 import 'package:negate/logger/logger_factory.dart';
 import 'package:negate/sentiment_analysis.dart';
@@ -85,6 +86,10 @@ Future<void> main() async {
     // as desktop hooks require their own constantly running thread
     // otherwise the hooks will not be called
     await loggerUI.initSystemTray();
+    await localNotifier.setup(
+      appName: 'Negate',
+      shortcutPolicy: ShortcutPolicy.requireCreate,
+    );
     await Isolate.spawn(LoggerFactory.startLoggerFactory,
         TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
   }
