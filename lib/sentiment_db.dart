@@ -16,17 +16,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'sentiment_db.g.dart';
 
 class SentimentLogs extends Table {
+  // Name of the app being logged
   TextColumn get name => text().withLength(min: 3, max: 256)();
+  // Hour of the day the app was last logged
   DateTimeColumn get hour => dateTime()();
+  // Time used in the app in seconds
   IntColumn get timeUsed => integer()();
+  // Average sentiment score of the app
   RealColumn get avgScore => real()();
 
   @override
+  // we want to make sure that each app has only one entry per hour
   Set<Column> get primaryKey => {name, hour};
 }
 
 class AppIcons extends Table {
+  // Name of the app being logged
   TextColumn get name => text().withLength(min: 3, max: 256)();
+  // Icon of the app
   BlobColumn get icon => blob()();
 
   @override
@@ -37,7 +44,6 @@ class AppIcons extends Table {
 class SentimentDB extends _$SentimentDB {
   // we tell the database where to store the data with this constructor
   SentimentDB() : super(_openConnection());
-  //SentimentDB.ndb(NativeDatabase db): super(LazyDatabase(() async {return db;}));
 
   SentimentDB.connect(DatabaseConnection connection)
       : super.connect(connection);
@@ -52,6 +58,9 @@ class SentimentDB extends _$SentimentDB {
     return ico.icon;
   }
 
+  // Returns a list of names of all the apps that have had their icon logged,
+  // this allows the logger to check if the app has been logged before and
+  // not log it again without having to have the icon of every app in memory
   Future<HashSet<String>> getListOfIcons() async {
     var set = HashSet<String>();
     var iconList =
@@ -62,6 +71,8 @@ class SentimentDB extends _$SentimentDB {
     return set;
   }
 
+  // JSON encoder, required for the date time object as JSON does not have a
+  // date time object standard
   dynamic encoder(dynamic item) {
     Map<String, dynamic> encodedItem = {};
     if (item is SentimentLog) {
@@ -73,6 +84,7 @@ class SentimentDB extends _$SentimentDB {
     return encodedItem;
   }
 
+  // JSON decoder
   dynamic reviver(dynamic key, dynamic value) {
     if (key == 'hour') {
       return DateTime.parse(value);
@@ -107,19 +119,26 @@ class SentimentDB extends _$SentimentDB {
     }
   }
 
+  // gets the average sentiment score of all the apps used within a specified
+  // period of time
   Future<List<MapEntry<String, List<double>>>> _getSentimentsByName(
       DateTime after,
       [DateTime? before]) async {
+    // if before is null, then we only use after for the range of dates to fetch
     var query = select(sentimentLogs)
       ..where((tbl) => tbl.hour.isBiggerOrEqualValue(after));
     if (before != null) {
       query = select(sentimentLogs)
         ..where((tbl) => tbl.hour.isBetweenValues(after, before));
     }
+    // Create empty maps to store the average sentiment score and time used
     Map<String, List<double>> weeklyAverage = <String, List<double>>{};
     Map<String, int> weeklyCount = <String, int>{};
     var res = await query.get();
     for (var log in res) {
+      // if the app has already been logged, then we add the new sentiment score
+      // to the overall average and time used to the existing values
+      // otherwise we add the app to the map
       if (weeklyAverage.containsKey(log.name)) {
         weeklyAverage[log.name]![0] =
             ((weeklyAverage[log.name]![0] * weeklyCount[log.name]!) +
@@ -137,14 +156,19 @@ class SentimentDB extends _$SentimentDB {
     return weeklyAverage.entries.toList();
   }
 
+  // Generates a list of the top 5 most positive and negative apps used within
+  // a specified period of time and returns them as a list of lists
   Future<List<List<MapEntry<String, List<double>>>>> getRecommendations(
       DateTime after) async {
     var sorted = await _getSentimentsByName(after);
     //Ignore apps used for less than 10 minutes
     sorted.removeWhere((element) => element.value[1] < 10);
+    //Sort the list in ascending order by the average sentiment score
     sorted.sort((a, b) => a.value[0].compareTo(b.value[0]));
     var negative = sorted;
+    // reverse the list to get the most positive apps at the top
     var positive = sorted.reversed.toList();
+    // only show the top 5 apps for each list
     if (sorted.length > 5) {
       negative = sorted.sublist(0, 5);
       positive = sorted.reversed.toList().sublist(0, 5);
@@ -152,11 +176,15 @@ class SentimentDB extends _$SentimentDB {
     return [negative, positive];
   }
 
+  // Gets the data for the daily breakdown pie chart
   Future<List<MapEntry<String, List<double>>>> getDailyBreakdown(
       DateTime date) async {
+    // align the date to the start of the day
     var selectedDate = date.alignDateTime(const Duration(days: 1));
+    // get the sentiment logs for the selected date
     var sentiments = await _getSentimentsByName(
         selectedDate, selectedDate.add(const Duration(days: 1)));
+    // sort the list in descending order by the time used
     sentiments.sort((b, a) => a.value[1].compareTo(b.value[1]));
     var sub = sentiments;
     double totalTime = 0;
@@ -165,11 +193,16 @@ class SentimentDB extends _$SentimentDB {
 
     for (var sentiment in sentiments) {
       totalTime += sentiment.value[1];
+      // if more than 7 apps have been used, then we only show the top 7
+      // and combine the rest into an 'Other' category.
+      // for this reason we need to know the total time used by the top 7 apps
+      // for the 'Other' category to be displayed correctly
       if (counter == 7) {
         subTime = totalTime;
       }
       counter++;
     }
+    // calculate the percentage of time used for each app
     for (var sentiment in sub) {
       sentiment.value[2] = sentiment.value[1] / totalTime;
     }
@@ -181,6 +214,7 @@ class SentimentDB extends _$SentimentDB {
     return sub;
   }
 
+  // Gets the data for the hourly breakdown line chart
   Future<List<double>> getAvgHourlySentiment(DateTime date) async {
     var query = (select(sentimentLogs)
       ..where((tbl) =>
@@ -190,6 +224,7 @@ class SentimentDB extends _$SentimentDB {
     var res = await query.get();
     var averages = List<double>.filled(24, 0);
     var totalTime = List<int>.filled(24, 0);
+    // builds a list of the average sentiment score for each hour of the day
     for (var i in res) {
       averages[i.hour.hour] += i.avgScore * i.timeUsed;
       totalTime[i.hour.hour] += i.timeUsed;
@@ -203,6 +238,7 @@ class SentimentDB extends _$SentimentDB {
     return averages;
   }
 
+  // Gets the sentiment logs for a specified hour of the day, sorted by time used
   Future<List<SentimentLog>> getDaySentiment(DateTime time) async {
     return await (select(sentimentLogs)
           ..where((tbl) {
@@ -223,6 +259,7 @@ class SentimentDB extends _$SentimentDB {
     sdb.into(sdb.appIcons).insert(entry);
   }
 
+  // Adds a list of sentiment logs to the database
   static Future<void> addSentiments(AddSentimentRequest r) async {
     var isolate = DriftIsolate.fromConnectPort(r.iPort);
     var sdb = SentimentDB.connect(await isolate.connect());
@@ -231,6 +268,7 @@ class SentimentDB extends _$SentimentDB {
       for (var log in r.sentiments.entries) {
         var entry = SentimentLogsCompanion(
             name: Value(log.key),
+            // align the date to the start of the hour
             hour: Value(
                 log.value.lastTimeUsed.alignDateTime(const Duration(hours: 1))),
             timeUsed: Value(log.value.totalTimeUsed.ceil()),
@@ -243,6 +281,7 @@ class SentimentDB extends _$SentimentDB {
   }
 }
 
+// Extension to align a DateTime to a specified Duration
 extension Alignment on DateTime {
   DateTime alignDateTime(Duration alignment, [bool roundUp = false]) {
     assert(alignment >= Duration.zero);
@@ -288,6 +327,8 @@ LazyDatabase _openConnection() {
   });
 }
 
+// Required as Isolates can only pass a single object and the database
+// has to run on a separate isolate for cross isolate communication
 class IsolateStartRequest {
   final SendPort sendDriftIsolate;
   final String targetPath;

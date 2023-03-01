@@ -8,14 +8,14 @@ import 'package:intl/intl.dart';
 import 'package:negate/logger/logger_factory.dart';
 import 'package:negate/sentiment_db.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:negate/logger/android_logger.dart';
 
 import 'globals.dart';
 
 class CommonUI {
-  static bool firstPage = true;
+  // check if the user has moved to he next page
+  static bool _firstPage = true;
 
   static Widget infoPage(BuildContext context) {
     return Scaffold(
@@ -59,7 +59,8 @@ class CommonUI {
   static Future<void> showDisclosure(
       BuildContext context, SharedPreferences pref) async {
     var firstPage = LoggerFactory.getDisclosureText(context);
-    var secondPage = SingleChildScrollView(child: ListBody(
+    var secondPage = SingleChildScrollView(
+        child: ListBody(
       children: const [
         Text("Privacy Policy",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
@@ -89,7 +90,7 @@ class CommonUI {
           return AlertDialog(
             scrollable: true,
             title: const Text('Privacy Disclosure'),
-            content: CommonUI.firstPage ? firstPage : secondPage,
+            content: CommonUI._firstPage ? firstPage : secondPage,
             actions: <Widget>[
               TextButton(
                   style: TextButton.styleFrom(
@@ -107,13 +108,13 @@ class CommonUI {
                 style: TextButton.styleFrom(
                   textStyle: const TextStyle(fontSize: 20),
                 ),
-                child: CommonUI.firstPage
+                child: CommonUI._firstPage
                     ? const Text('Next')
                     : const Text('Accept'),
                 onPressed: () {
-                  if (CommonUI.firstPage) {
+                  if (CommonUI._firstPage) {
                     setState(() {
-                      CommonUI.firstPage = false;
+                      CommonUI._firstPage = false;
                     });
                     return;
                   }
@@ -178,6 +179,7 @@ class CommonUI {
     );
   }
 
+  // colours the bar based on the positivity of the value
   static Color getBarColour(double val) {
     int percent = (val * 100).round();
     if (percent >= 75) {
@@ -195,6 +197,7 @@ class CommonUI {
     }
   }
 
+  // creates a listview of the app sentiment logs passed in including the app icon
   static Widget appListView(
       List<MapEntry<String, List<double>>> logs, SentimentDB sdb) {
     return ListView.separated(

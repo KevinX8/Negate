@@ -13,31 +13,38 @@ import '../sentiment_analysis.dart';
 class AppList {
   DateTime lastTimeUsed;
   double totalTimeUsed;
-  int numPositive = 0;
-  int numNegative = 0;
+  int numPositive = 0; // number of positive sentences
+  int numNegative = 0; // number of negative sentences
 
   AppList(this.lastTimeUsed, this.totalTimeUsed, this.numPositive, this.numNegative);
 }
 
 class SentenceLogger {
+  // Singleton
   static final SentenceLogger _instance = SentenceLogger.init();
+  // sentence buffer for the current sentence being typed
   static final StringBuffer _sentence = StringBuffer();
   static final HashMap<String, AppList> _appMap = HashMap<String, AppList>();
   static late final HashSet<String> _appIcons;
   static late DriftIsolate _iso;
   static late TfParams _tfp;
-  static const int _updateFreq = 1; //update db every 5 minutes
+  static const int _updateFreq = 1; //update db every 1 minute
+  // default app blacklist
   RegExp blacklist =
       RegExp(r".*system.*|.*keyboard.*|.*input.*|.*honeyboard.*|.*swiftkey.*");
+  // last app used
   String _lastUsedApp = "";
+  // has the db just been updated? (to prevent race conditions)
   bool _dbUpdated = false;
 
+  // Singleton
   factory SentenceLogger() {
     return _instance;
   }
 
   SentenceLogger.init();
 
+  // Save the current sentiment logs to the database
   void logToDB() {
     Isolate.spawn(SentimentDB.addSentiments,
         AddSentimentRequest(_appMap, _iso.connectPort));
@@ -57,8 +64,10 @@ class SentenceLogger {
     request.sendDriftIsolate.send(driftIsolate);
   }
 
+  // Entry point for the background isolate
   Future<void> startLogger(TfliteRequest request) async {
     var rPort = ReceivePort();
+    // start the drift database in a background isolate
     await Isolate.spawn(
       _startBackground,
       IsolateStartRequest(
@@ -66,6 +75,7 @@ class SentenceLogger {
     );
 
     var prefs = request.prefs;
+    // get custom blacklist from preferences
     if (prefs.getString('blacklist') != null) {
       blacklist = RegExp(prefs.getString('blacklist')!);
     }
@@ -74,6 +84,7 @@ class SentenceLogger {
     _tfp = request.tfp;
     var sdb = SentimentDB.connect(await _iso.connect());
     _appIcons = await sdb.getListOfIcons();
+    // close connection to database and send the drift isolate back to the main isolate
     sdb.close();
     request.sendDriftIsolate.send(_iso.connectPort);
   }
@@ -111,6 +122,9 @@ class SentenceLogger {
       }
       newHour = true;
     }
+    // used = false if the app was not used in the last 10 minutes,
+    // but we still want to update the average score as it still affects the
+    // user's mood
     if (used || newHour) {
       app.lastTimeUsed = now;
       app.totalTimeUsed = totalTimeUsed;
@@ -119,6 +133,7 @@ class SentenceLogger {
 
   void addAppEntry() async {
     log(getSentence());
+    // if loggable sentence is too short, clear it and return
     if (getSentence().length < 6) {
       clearSentence();
       return;
@@ -145,6 +160,7 @@ class SentenceLogger {
       _appMap.putIfAbsent(name, () => AppList(now, 0, 1, 1));
     }
 
+    //Update database every _updateFreq minutes
     if (now.minute % _updateFreq == 0 && !_dbUpdated) {
       logToDB();
       _dbUpdated = true;
@@ -155,6 +171,7 @@ class SentenceLogger {
 
   void updateFGApp(String name) {
     DateTime now = DateTime.now();
+    // ignore apps in blacklist
     if (blacklist.hasMatch(name.toLowerCase())) {
       return;
     }
@@ -163,6 +180,7 @@ class SentenceLogger {
           now.difference(_appMap[name]!.lastTimeUsed).inSeconds.toDouble() / 60;
       if (name == _lastUsedApp) {
         if (now.hour != _appMap[name]!.lastTimeUsed.hour) {
+          // if the next hour has been reached reset the time used
           if (timeUsedSince / now.minute > 1) {
             _appMap[name]!.totalTimeUsed = now.minute.toDouble();
           } else {

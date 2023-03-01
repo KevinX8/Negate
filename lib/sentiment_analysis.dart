@@ -58,6 +58,9 @@ class SentimentAnalysis {
   }
 
   Future<double> classify(String rawText) async {
+    // If translate is enabled, translate the text to english
+    // using google ml kit on device translation,
+    // source language is detected automatically
     if (_translate == 2) {
       log(rawText);
       final String response =

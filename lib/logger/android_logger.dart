@@ -21,6 +21,7 @@ class AndroidLogger extends SentenceLogger {
   @override
   Future<void> startLogger(TfliteRequest request) async {
     await super.startLogger(request);
+    // Foreground task initialization to keep app running in background
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'sentence_logger',
@@ -52,8 +53,10 @@ class AndroidLogger extends SentenceLogger {
   }
 
   Future<void> startAccessibility() async {
+    // check for notification permission and request if not granted
     var statusNotify = await Permission.notification.request();
     if (statusNotify.isGranted) {
+      // Start notification service to keep app running in background
       FlutterForegroundTask.startService(
           notificationTitle: "Sentiment Tracker",
           notificationText: "Analyzing sentence sentiment");
@@ -65,17 +68,21 @@ class AndroidLogger extends SentenceLogger {
           await FlutterAccessibilityService.requestAccessibilityPermission();
     }
     if (status) {
+      // if permission granted, start listening to accessibility events
       FlutterAccessibilityService.accessStream.listen(_accessibilityListener);
     }
   }
 
   static void _accessibilityListener(AccessibilityEvent event) {
+    // if the package is blacklisted, ignore the event
     if (AndroidLogger().blacklist.hasMatch(event.packageName!)) {
       return;
     }
+    // if the event is a window state change, update the foreground app in use
     if (event.eventType == EventType.typeWindowStateChanged) {
       event.packageTitle().then((title) {
         AndroidLogger().updateFGApp(title!);
+        // log the app icon if it is not already logged
         if (!AndroidLogger().hasAppIcon(title)) {
           DeviceApps.getApp(event.packageName!, true).then((app) {
             var appWIcon = (app as ApplicationWithIcon?)!;
@@ -85,8 +92,12 @@ class AndroidLogger extends SentenceLogger {
       });
       return;
     }
+    // if the event is a text change, update the current sentence being typed
     var textNow = event.nodesText![0];
     log(textNow);
+    // if the sentence is a single character (the minimum allowed to be logged
+    // by android accessibility, and hence when it's most likely a user started
+    // a new sentence), log the app in use
     if (textNow.length == 1) {
       AndroidLogger().addAppEntry();
     }
@@ -96,6 +107,8 @@ class AndroidLogger extends SentenceLogger {
   }
 }
 
+// This extension is used to get the colloquial name of the app that is in use
+// instead of the package name for better display in the UI
 extension NameConversion on AccessibilityEvent {
   Future<String?> packageTitle() async {
     if (packageName != null) {

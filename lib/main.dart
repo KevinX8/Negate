@@ -30,19 +30,23 @@ import 'package:negate/ui/common_ui.dart';
 
 Future<void> main() async {
   const loggerUI = ThemedHourlyUI();
+  // This is to allow access to service bindings before the UI is displayed
+  // for things such as shared preferences and device specific directories
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Use a secure storage method for the database
   final dbFolder = await getApplicationSupportDirectory();
   final dbString = p.join(dbFolder.path, 'db.sqlite');
   final rPort = ReceivePort();
 
   var prefs = await SharedPreferences.getInstance();
+  // Set translation to off by default
   int translate = 0;
   var analyser = SentimentAnalysis();
   await analyser.init();
   if (prefs.getBool('translate') == null) {
+    // Check if the system contains a language other than English
     final List<Locale> systemLocales = WidgetsBinding.instance.window.locales;
-    log(systemLocales.toString());
     if (systemLocales.length > 1 || systemLocales.where((locale) => !locale.languageCode.contains('en')).isNotEmpty) {
       prefs.setBool('translate', true);
     }
@@ -56,6 +60,8 @@ Future<void> main() async {
       }
     }
   }
+  // Pass analyser to logger isolate as initialisation is not possible within the isolate
+  // as only the main isolate can access the service bindings
   var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary, translate);
 
   if (prefs.getBool('dynamic_theme') == null) {
@@ -64,25 +70,27 @@ Future<void> main() async {
   } else {
     getIt.registerSingleton<bool>(prefs.getBool('dynamic_theme')!);
   }
-  prefs.getBool('average_sentiment') == null
-      ? prefs.setBool('average_sentiment', true)
-      : null;
-  prefs.getDouble('multiplier_sentiment') == null
-      ? prefs.setDouble('multiplier_sentiment', 0.75)
-      : null;
   prefs.getString('blacklist') == null
       ? prefs.setString('blacklist', LoggerFactory.getLoggerRegex().pattern)
       : null;
   
   if (Platform.isAndroid || Platform.isIOS) {
+    // Start the logger within the main isolate on mobile
+    // as service bindings are not available within isolates
+    // and the logger needs access to android's accessibility service
     LoggerFactory.startLoggerFactory(
         TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
   } else {
+    // Start the logger within an isolate on desktop
+    // as desktop hooks require their own constantly running thread
+    // otherwise the hooks will not be called
     await loggerUI.initSystemTray();
     await Isolate.spawn(LoggerFactory.startLoggerFactory,
         TfliteRequest(rPort.sendPort, dbString, tfp, prefs));
   }
 
+  // Receive the send port from the logger isolate for the drift database
+  // and connect to the database and register it for the UI to use
   var iPort = await rPort.first as SendPort;
   var isolate = DriftIsolate.fromConnectPort(iPort);
   var sdb = SentimentDB.connect(await isolate.connect());
@@ -131,6 +139,8 @@ class ThemedHourlyUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget home = HourlyDashboard();
+    // Prevent building the window decorations on unit tests as they are not
+    // supported on the test platform
     if ((Platform.isWindows || Platform.isLinux || Platform.isMacOS) &&
         !Platform.environment.containsKey('FLUTTER_TEST')) {
       home = Column(
@@ -140,6 +150,7 @@ class ThemedHourlyUI extends StatelessWidget {
         ],
       );
     } else {
+      // On mobile, use a foreground task to keep the app running
       home = WithForegroundTask(child: home);
     }
 
@@ -198,6 +209,8 @@ class HourlyDashboard extends ConsumerWidget {
       } else {
         if (Platform.isAndroid && !_requested) {
           _requested = true;
+          // Start the accessibility service on android only after the user has
+          // accepted the privacy policy (Google Play Store requires this)
           AndroidLogger().startAccessibility();
         }
       }
@@ -344,6 +357,7 @@ class HourlyDashboard extends ConsumerWidget {
               ref.read(dbProvider.notifier).set(slog);
             }, onError: (err, stk) => log(err));
           },
+          // Manual refresh required, as the database is updated in the background
           child: const Text('Update logs'),
         ),
       ],
@@ -353,6 +367,7 @@ class HourlyDashboard extends ConsumerWidget {
   Widget bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontWeight: FontWeight.normal, fontSize: 14);
     String text;
+    // Only show every 6th hour for readability
     if (value == 0) {
       text = '12 AM';
     } else if (value == 6) {
