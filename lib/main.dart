@@ -47,7 +47,10 @@ Future<void> main() async {
   if (prefs.getBool('translate') == null) {
     // Check if the system contains a language other than English
     final List<Locale> systemLocales = WidgetsBinding.instance.window.locales;
-    if (systemLocales.length > 1 || systemLocales.where((locale) => !locale.languageCode.contains('en')).isNotEmpty) {
+    if (systemLocales.length > 1 ||
+        systemLocales
+            .where((locale) => !locale.languageCode.contains('en'))
+            .isNotEmpty) {
       prefs.setBool('translate', true);
     }
   } else {
@@ -62,7 +65,8 @@ Future<void> main() async {
   }
   // Pass analyser to logger isolate as initialisation is not possible within the isolate
   // as only the main isolate can access the service bindings
-  var tfp = TfParams(analyser.sInterpreter.address, analyser.dictionary, translate);
+  var tfp =
+      TfParams(analyser.sInterpreter.address, analyser.dictionary, translate);
 
   if (prefs.getBool('dynamic_theme') == null) {
     prefs.setBool('dynamic_theme', true);
@@ -73,7 +77,7 @@ Future<void> main() async {
   prefs.getString('blacklist') == null
       ? prefs.setString('blacklist', LoggerFactory.getLoggerRegex().pattern)
       : null;
-  
+
   if (Platform.isAndroid || Platform.isIOS) {
     // Start the logger within the main isolate on mobile
     // as service bindings are not available within isolates
