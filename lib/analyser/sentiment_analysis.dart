@@ -1,19 +1,15 @@
 import 'dart:developer';
 
 import 'package:flutter/services.dart';
-import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
-import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class SentimentAnalysis {
   // name of the model file
   final _modelFile = 'text_classification.tflite';
   final _vocabFile = 'text_classification_vocab.txt';
-  final _languageIdentifier = LanguageIdentifier(confidenceThreshold: 0.5);
 
   // Maximum length of sentence
   final int _sentenceLen = 256;
-  int _translate = 0;
 
   final String start = '<START>';
   final String pad = '<PAD>';
@@ -27,10 +23,9 @@ class SentimentAnalysis {
   SentimentAnalysis();
 
   SentimentAnalysis.isolate(
-      int iAddress, Map<String, int> dict, int translate) {
+      int iAddress, Map<String, int> dict) {
     sInterpreter = Interpreter.fromAddress(iAddress);
     dictionary = dict;
-    _translate = translate;
   }
 
   Future<void> init() async {
@@ -57,24 +52,7 @@ class SentimentAnalysis {
     log('Dictionary loaded successfully');
   }
 
-  Future<double> classify(String rawText) async {
-    // If translate is enabled, translate the text to english
-    // using google ml kit on device translation,
-    // source language is detected automatically
-    if (_translate == 2) {
-      log(rawText);
-      final String response =
-          await _languageIdentifier.identifyLanguage(rawText);
-      log('language is : $response');
-      if (response != 'und' && response != 'en') {
-        final onDeviceTranslator = OnDeviceTranslator(
-            sourceLanguage: TranslateLanguage.values
-                .firstWhere((element) => element.bcpCode == response),
-            targetLanguage: TranslateLanguage.english);
-        rawText = await onDeviceTranslator.translateText(rawText);
-        log(rawText);
-      }
-    }
+  double classify(String rawText) {
     // tokenizeInputText returns List<List<double>>
     // of shape [1, 256].
     List<List<double>> input = tokenizeInputText(rawText);

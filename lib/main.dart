@@ -19,7 +19,7 @@ import 'package:system_tray/system_tray.dart';
 
 import 'package:negate/logger/android_logger.dart';
 import 'package:negate/logger/logger_factory.dart';
-import 'package:negate/sentiment_analysis.dart';
+import 'package:negate/analyser/sentiment_analysis.dart';
 import 'package:negate/sentiment_db.dart';
 import 'package:negate/ui/common_ui.dart';
 import 'package:negate/ui/daily_breakdown.dart';
@@ -41,7 +41,7 @@ Future<void> main() async {
 
   var prefs = await SharedPreferences.getInstance();
   // Set translation to off by default
-  int translate = 0;
+  bool translate = false;
   var analyser = SentimentAnalysis();
   await analyser.init();
   if (prefs.getBool('translate') == null) {
@@ -55,12 +55,7 @@ Future<void> main() async {
     }
   } else {
     if (prefs.getBool('translate')!) {
-      if (Platform.isAndroid || Platform.isIOS) {
-        translate = 2;
-      } else {
-        //Desktop translation not implemented
-        translate = 1;
-      }
+      translate = true;
     }
   }
   // Pass analyser to logger isolate as initialisation is not possible within the isolate

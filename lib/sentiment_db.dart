@@ -339,7 +339,7 @@ class IsolateStartRequest {
 class TfParams {
   final int iAddress;
   final Map<String, int> dict;
-  final int translate;
+  final bool translate;
 
   TfParams(this.iAddress, this.dict, this.translate);
 }

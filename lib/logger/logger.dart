@@ -6,9 +6,10 @@ import 'dart:isolate';
 import 'package:drift/drift.dart';
 import 'package:drift/isolate.dart';
 import 'package:drift/native.dart';
+import 'package:negate/analyser/sentiment_analysis.dart';
+import 'package:negate/analyser/sentiment_analysis_mlkit.dart';
 
 import 'package:negate/sentiment_db.dart';
-import 'package:negate/sentiment_analysis.dart';
 
 class AppList {
   DateTime lastTimeUsed;
@@ -16,7 +17,8 @@ class AppList {
   int numPositive = 0; // number of positive sentences
   int numNegative = 0; // number of negative sentences
 
-  AppList(this.lastTimeUsed, this.totalTimeUsed, this.numPositive, this.numNegative);
+  AppList(this.lastTimeUsed, this.totalTimeUsed, this.numPositive,
+      this.numNegative);
 }
 
 class SentenceLogger {
@@ -101,7 +103,8 @@ class SentenceLogger {
     SentenceLogger._sentence.clear();
   }
 
-  void _setAppValues(DateTime now, AppList app, double score, {bool used = true}) {
+  void _setAppValues(DateTime now, AppList app, double score,
+      {bool used = true}) {
     double timeUsedSince =
         now.difference(app.lastTimeUsed).inSeconds.toDouble() / 60;
     double totalTimeUsed = app.totalTimeUsed + timeUsedSince;
@@ -139,8 +142,15 @@ class SentenceLogger {
       return;
     }
     String name = _lastUsedApp;
-    var analyser = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict, _tfp.translate);
-    double score = await analyser.classify(getSentence());
+    double score = 0.5;
+    if ((Platform.isAndroid || Platform.isIOS) && _tfp.translate) {
+      score = await SentimentAnalysisMLKit.isolate(_tfp.iAddress, _tfp.dict)
+          .classifyMobile(getSentence());
+    } else {
+      score = SentimentAnalysis.isolate(_tfp.iAddress, _tfp.dict)
+          .classify(getSentence());
+    }
+
     log(score.toString());
     clearSentence();
 
@@ -149,9 +159,9 @@ class SentenceLogger {
     var appsInPeriod = _appMap.entries.where((element) =>
         element.value.lastTimeUsed.difference(now).inMinutes <= 10);
     for (var app in appsInPeriod) {
-        if (app.key == name) continue;
-        _setAppValues(now, app.value, score, used: false);
-      }
+      if (app.key == name) continue;
+      _setAppValues(now, app.value, score, used: false);
+    }
 
     if (_appMap.containsKey(name)) {
       var app = _appMap[name]!;
