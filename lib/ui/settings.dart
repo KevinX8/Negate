@@ -28,6 +28,10 @@ class SettingsPage {
               if (prefs.data == null) {
                 return const Text('Loading...');
               }
+              String translateText = 'Not yet Implemented';
+              if (Platform.isAndroid || Platform.isIOS) {
+                translateText = 'Use offline MLKit to translate non-english text';
+              }
               var textController = TextEditingController(
                   text: prefs.data!.getString('blacklist'));
               return SettingsList(
@@ -60,7 +64,7 @@ class SettingsPage {
                             onToggle: (value) => setState(() {
                               prefs.data?.setBool('translate', value);
                             }),
-                            title: const Text('Use Google Translate for non-english text')),
+                            title: Text(translateText)),
                       ]
                   ),
                   SettingsSection(title: const Text('Database'), tiles: <
