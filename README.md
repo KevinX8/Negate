@@ -2,6 +2,20 @@
 
 Mental Mood Tracking
 
+## Build Instructions
+
+Setup Flutter:
+https://docs.flutter.dev/get-started/install/windows
+
+For Android:
+```
+flutter build apk
+```
+For Windows:
+```
+flutter build windows
+```
+
 ## What is Negate?
 Negate is a powerful Mental Mood Tracking tool that makes use of Sentiment Analysis and Artificial Intelligence along with your behaviour in apps to figure out which apps are affecting your day-to-day life the most!
 

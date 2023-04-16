@@ -15,6 +15,7 @@ void main() {
 
     score = analyser.classify("I don't like this very much, but it has some good points");
     expect(score, greaterThan(0.5));
+    expect(score, lessThan(0.6));
 
     score = analyser.classify("This is an absolute masterpiece");
     expect(score, greaterThan(0.6));
