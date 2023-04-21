@@ -320,8 +320,11 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     // put the database file, called db.sqlite here, into the documents folder
     // for your app.
-    final dbFolder = await getApplicationSupportDirectory();
-    final file = File(p.join(dbFolder.path, 'db.sqlite'));
+    Directory dbFolder = Directory('.');
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      dbFolder = await getApplicationSupportDirectory();
+    }
+    final file = File(p.join(dbFolder.path, 'test.sqlite'));
     return NativeDatabase(file);
   });
 }
